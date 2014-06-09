@@ -1,6 +1,6 @@
 This repository contains a minimal code to play on your computer keyboard like if it was a piano, an instrument that I call the Pianoputer (yeah I am not very good at names).
 
-To play you first need to install Python, and the Python libraries Numpy and Pygame.
+To play you first need to install Python, and the Python libraries Numpy, Scipy and Pygame. Agreed, the dependencies are a little heavy.
 
 Then you just unzip everything in a folder and run this line:
 

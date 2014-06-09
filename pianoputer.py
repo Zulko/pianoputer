@@ -1,12 +1,13 @@
 import numpy as np
 
 def speedx(snd_array, factor):
+    """ Speeds up / slows down a sound, by some factor. """
     indices = np.round( np.arange(0, len(snd_array), factor) )
     indices = indices[indices < len(snd_array)].astype(int)
     return snd_array[ indices ]
 
 def stretch(snd_array, factor, window_size, h):
-    
+    """ Stretches/shortens a sound, by some factor. """
     phase  = np.zeros(window_size)
     hanning_window = np.hanning(window_size)
     result = np.zeros( len(snd_array) /factor + window_size)
@@ -33,6 +34,7 @@ def stretch(snd_array, factor, window_size, h):
     return result.astype('int16')
 
 def pitchshift(snd_array, n, window_size=2**13, h=2**11):
+    """ Changes the pitch of a sound by ``n`` semitones. """
     factor = 2**(1.0 * n / 12.0)
     stretched = stretch(snd_array, 1.0/factor, window_size, h) 
     return speedx(stretched[window_size:], factor)
@@ -73,5 +75,5 @@ while True:
              
     elif event.type == pygame.KEYUP and key in key_sound.keys():
         
-        key_sound[key].fadeout(50) # stops with 10ms fadeout
+        key_sound[key].fadeout(50) # stops with 50ms fadeout
         is_playing[key] = False
