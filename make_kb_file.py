@@ -1,5 +1,6 @@
-import pygame as pg
+#!/usr/bin/env python
 
+import pygame as pg
 
 kb_file = open("my_keyboard.kb", 'w')
 
