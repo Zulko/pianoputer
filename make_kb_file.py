@@ -17,5 +17,5 @@ while True:
 			kb_file.write(name + '\n')
 
 kb_file.close()
-print ("Done. you have a new keyboard configuration file: %s"%skb_file)
+print ("Done. you have a new keyboard configuration file: %s"%(kb_file))
 pg.quit()
