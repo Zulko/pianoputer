@@ -42,3 +42,9 @@ nosetests.xml
 # Pipy codes
 
 .pypirc
+
+# Pianoputer files
+*.wav
+!bowl.wav
+*.kb
+!typewriter.kb
