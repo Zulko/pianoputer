@@ -91,7 +91,7 @@ def main():
     print('DONE')
 
     # So flexible ;)
-    pygame.mixer.init(fps, -16, 1, 100)
+    pygame.mixer.init(fps, -16, 1, 2048)
     # For the focus
     screen = pygame.display.set_mode((150, 150))
 
