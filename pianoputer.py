@@ -19,9 +19,10 @@ def stretch(snd_array, factor, window_size, h):
     """ Stretches/shortens a sound, by some factor. """
     phase = np.zeros(window_size)
     hanning_window = np.hanning(window_size)
-    result = np.zeros(len(snd_array) / factor + window_size)
+    result = np.zeros(int(len(snd_array) / factor + window_size))
 
     for i in np.arange(0, len(snd_array) - (window_size + h), h*factor):
+        i = int(i)
         # Two potentially overlapping subarrays
         a1 = snd_array[i: i + window_size]
         a2 = snd_array[i + h: i + window_size + h]
