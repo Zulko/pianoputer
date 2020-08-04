@@ -4,6 +4,9 @@ Here is a video_ of the program in action
 
 To play you first need to install Python, and the Python libraries Numpy, Scipy and Pygame. Agreed, the dependencies are a little heavy.
 
+Install all packages using following command:
+    pip install -r requirements.txt
+    
 Then you just unzip everything in a folder and run this line:
 
     python pianoputer.py
