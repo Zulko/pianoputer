@@ -63,9 +63,6 @@ def channels(sound_object):
         raise NotImplemented
     return channel
 
-# FLAT_PULSE = pygame.mixer.Sound('..\\Assets\\Flat_pulse.ogg')
-# flat_pulse = pygame.sndarray.array(FLAT_PULSE)
-
 ONE_TWELVE     = 1.0 / 12.0
 P2_10          = 2 << 10
 P2_11          = 2 << 11
@@ -116,7 +113,7 @@ for n in TONES:
 def speedx_mono(input_array, factor):
     """
     SPEEDS UP / SLOWS DOWN A SOUND, BY SOME FACTOR.
-    OUTPUT ARRAY ELEMENT SIZES DEPENDS ON THE VARIABLE FACTOR (SEMITONES).
+    OUTPUT ARRAY SIZES DEPENDS ON THE VARIABLE FACTOR (SEMITONES).
 
     :param input_array: numpy.ndarray; Sound samples into an array (1d numpy.ndarray type int16)
     :param factor: float;
@@ -134,7 +131,7 @@ def speedx_mono(input_array, factor):
 def speedx_stereo(input_array, factor):
     """
     SPEEDS UP / SLOWS DOWN A SOUND, BY SOME FACTOR.
-    OUTPUT ARRAY ELEMENT SIZES VARY IN FUNCTION OF THE VARIABLE FACTOR (SEMITONES).
+    OUTPUT ARRAY SIZES DEPENDS ON THE VARIABLE FACTOR (SEMITONES).
 
     :param input_array: numpy.ndarray; Sound samples into an array (2d array type int16)
     :param factor: float; SEMITONES
@@ -284,8 +281,7 @@ def pitchshift(snd_array, n):
     assert isinstance(n, int), \
         "\nArgument n is not a int type, got %s " % type(n)
 
-    # SELECT THE CORRECT ALGORITHM ACCORDING TO THE
-    # SOUND TRACKS NUMBER (MON OR STEREO)
+    # SELECT THE CORRECT ALGORITHM ACCORDING TO THE NUMBER OF TRACK(S)
     if CHANNEL == 2:
         stretched = stretch_stereo(snd_array, 1.0/factor_list[n])
         return speedx_stereo(stretched[WINDOW_SIZE:], factor_list[n])
