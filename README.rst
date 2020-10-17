@@ -2,7 +2,7 @@ This repository contains a minimal code to play on your computer keyboard like i
 
 Here is a video_ of the program in action
 
-To play you first need to install Python, and the Python libraries Numpy, Scipy and Pygame. Agreed, the dependencies are a little heavy.
+To play you first need to install Python, and the Python libraries Numpy, Scipy and Pygame (this command should install them: `pip install scipy pygame`).
 
 Then you just unzip everything in a folder and run this line:
 
