@@ -45,10 +45,11 @@ This will let you press the keys in the order that you want, and create a new ke
 - [DONE] add piano sample for qwerty
 - [DONE] add caching
 - [DONE] update sample to be c4
-- update azerty to be anchored at certain location
-- confirm that tool works for stereo files too
 - have ui show the keyboard svg
 - make installable through pypi
+- add clear-cache command
+- update azerty to be anchored at certain location
+- confirm that tool works for stereo files too
 - allow non-anchor not to be passed in but give a warning
 - autodetect input file frequency and pitch shift it to the needed start frequency?
 
