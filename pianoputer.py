@@ -89,7 +89,7 @@ def transpose_sounds(
         sounds.append(sound)
     return sounds
 
-def get_keys_tones_anchor_note(keyboard_file):
+def get_config_info(keyboard_file):
     lines = keyboard_file.read().split('\n')
     keys = []
     anchor_note = ""
@@ -113,7 +113,12 @@ def get_keys_tones_anchor_note(keyboard_file):
             "https://en.wikipedia.org/wiki/Piano_key_frequencies"
         )
     tones = [i - achor_index for i in range(len(keys))]
-    return keys, tones, anchor_note
+    keyboard_img_path = keyboard_file.name[:-3] + 'png'
+    try:
+        keyboard_img = pygame.image.load(keyboard_img_path)
+    except FileNotFoundError:
+        keyboard_img = None
+    return keys, tones, anchor_note, keyboard_img
 
 
 def main():
@@ -132,7 +137,7 @@ def main():
     # TODO fix this for different keyboards
     tone_count = 43
     tones = range(tone_count)
-    keys, tones, anchor_note = get_keys_tones_anchor_note(args.keyboard)
+    keys, tones, anchor_note, keyboard_img = get_config_info(args.keyboard)
 
     print('Generating samples for each key')
     # original_transposed_sounds = [pitchshift(sound, n) for n in tones]
@@ -141,9 +146,26 @@ def main():
     print('DONE')
 
     # So flexible ;)
+    # TODO get channels
     pygame.mixer.init(fps, 32, 1, 2048)
     # For the focus
-    screen = pygame.display.set_mode((150, 150))
+    BLACK = (0, 0, 0)
+    width = 50
+    height = 50
+    if keyboard_img:
+        rect = keyboard_img.get_rect()
+        width = rect.width
+        height = rect.height
+        rect.center = width//2, height//2
+    screen = pygame.display.set_mode((width, height))
+    screen.fill(BLACK)
+    if keyboard_img:
+        screen.blit(keyboard_img, rect)
+    pygame.display.update()
+    # load image
+    # img.convert()
+    # rect = img.get_rect()
+    # rect.center = w//2, h//2
 
     sounds = map(pygame.sndarray.make_sound, transposed_sounds)
     key_sound = dict(zip(keys, sounds))
