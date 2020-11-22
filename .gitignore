@@ -36,15 +36,14 @@ nosetests.xml
 .pydevproject
 
 # Temp files
-
 *~
 
 # Pipy codes
-
 .pypirc
 
-# Pianoputer files
-*.wav
-!bowl.wav
-*.kb
-!typewriter.kb
+# Mac files
+.DS_Store
+
+# Folders
+venv/
+audio_files/*/**

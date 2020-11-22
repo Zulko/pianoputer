@@ -4,75 +4,116 @@ from scipy.io import wavfile
 import argparse
 import numpy as np
 import pygame
-import sys
 import warnings
+import wave
+import librosa
+from pathlib import Path
+import soundfile
+import re
+import typing
+import os
 
-
-def speedx(snd_array, factor):
-    """ Speeds up / slows down a sound, by some factor. """
-    indices = np.round(np.arange(0, len(snd_array), factor))
-    indices = indices[indices < len(snd_array)].astype(int)
-    return snd_array[indices]
-
-
-def stretch(snd_array, factor, window_size, h):
-    """ Stretches/shortens a sound, by some factor. """
-    phase = np.zeros(window_size)
-    hanning_window = np.hanning(window_size)
-    result = np.zeros(int(len(snd_array) / factor + window_size))
-
-    for i in np.arange(0, len(snd_array) - (window_size + h), h*factor):
-        i = int(i)
-        # Two potentially overlapping subarrays
-        a1 = snd_array[i: i + window_size]
-        a2 = snd_array[i + h: i + window_size + h]
-
-        # The spectra of these arrays
-        s1 = np.fft.fft(hanning_window * a1)
-        s2 = np.fft.fft(hanning_window * a2)
-
-        # Rephase all frequencies
-        phase = (phase + np.angle(s2/s1)) % 2*np.pi
-
-        a2_rephased = np.fft.ifft(np.abs(s2)*np.exp(1j*phase))
-        i2 = int(i/factor)
-        result[i2: i2 + window_size] += hanning_window*a2_rephased.real
-
-    # normalize (16bit)
-    result = ((2**(16-4)) * result/result.max())
-
-    return result.astype('int16')
-
-
-def pitchshift(snd_array, n, window_size=2**13, h=2**11):
-    """ Changes the pitch of a sound by ``n`` semitones. """
-    factor = 2**(1.0 * n / 12.0)
-    stretched = stretch(snd_array, 1.0/factor, window_size, h)
-    return speedx(stretched[window_size:], factor)
-
+anchor_note_regex = re.compile("[abcdefg]\d$")
 
 def parse_arguments():
     description = ('Use your computer keyboard as a "piano"')
 
     parser = argparse.ArgumentParser(description=description)
+    default_wav_file = 'audio_files/piano_c4.wav'
     parser.add_argument(
         '--wav', '-w',
         metavar='FILE',
         type=argparse.FileType('r'),
-        default='bowl.wav',
-        help='WAV file (default: bowl.wav)')
+        default=default_wav_file,
+        help='WAV file (default: {})'.format(default_wav_file))
+    # https://github.com/mehrdad-dev/Jami/blob/master/assets/keyboard.jpg
+    # qwerty keyboard
+    default_keyboard_file = 'keyboards/qwerty_43keys.txt'
     parser.add_argument(
         '--keyboard', '-k',
         metavar='FILE',
         type=argparse.FileType('r'),
-        default='typewriter.kb',
-        help='keyboard file (default: typewriter.kb)')
+        default=default_keyboard_file,
+        help='keyboard file (default: {})'.format(default_keyboard_file))
     parser.add_argument(
         '--verbose', '-v',
         action='store_true',
         help='verbose mode')
 
     return (parser.parse_args(), parser)
+
+def transpose_sounds(
+    wav_path: str,
+    sample_rate_hz: int,
+    tones: typing.List[int],
+    anchor_note: str
+):
+    sounds = []
+    y, sr = librosa.load(wav_path, sr=sample_rate_hz)
+    file_name = os.path.splitext(os.path.basename(wav_path))[0]
+    match = anchor_note_regex.search(file_name)
+    if not match:
+        raise ValueError(
+            "Invalid audio file passed in for this keyboard\n"
+            "Keyboard requires anchor note {} and the wave file lacks the "
+            "required anchor note suffix. Pass in {}_{}.wav".format(
+                anchor_note, file_name, anchor_note
+            )
+        )
+    wav_anchor_note = file_name[-2:]
+    if wav_anchor_note != anchor_note:
+        raise ValueError(
+            "Invalid audio file passed in for this keyboard\n"
+            "Keyboard requires anchor note {} and the wave passed in {}\n"
+            "Pass in {}_{}.wav".format(
+                anchor_note, wav_anchor_note, file_name, anchor_note
+            )
+        )
+    folder_path = Path("audio_files/{}".format(file_name))
+    if not folder_path.exists():
+        os.mkdir(folder_path)
+    for i, tone in enumerate(tones):
+        cached_path = 'audio_files/{}/{}.wav'.format(file_name, tone)
+        if Path(cached_path).exists():
+            print(
+                "Loading note {} out of {}".format(i+1, len(tones))
+            )
+            sound, sr = librosa.load(cached_path, sr=sample_rate_hz)
+        else:
+            print(
+                "Transposing note {} out of {}".format(i+1, len(tones))
+            )
+            sound = librosa.effects.pitch_shift(y, sr, n_steps=tone)
+            soundfile.write(
+                cached_path, sound, sample_rate_hz, 'FLOAT')
+        sounds.append(sound)
+    return sounds
+
+def get_keys_tones_anchor_note(keyboard_file):
+    lines = keyboard_file.read().split('\n')
+    keys = []
+    anchor_note = ""
+    anchor_index = 0
+    for i, line in enumerate(lines):
+        line = line.strip()
+        if not line:
+            continue
+        match = anchor_note_regex.search(line)
+        if match:
+            anchor_note = line[-2:]
+            line = line[:-3]
+            achor_index = i
+        keys.append(line)
+    if not anchor_note:
+        raise ValueError(
+            "Invalid keyboard file, one key must have an anchor note written "
+            "next to it.\n"
+            "For example 'm c4' c4 refers to middle c at 261.6 hz.\n"
+            "To learn more about the possible anchor notes look here:\n"
+            "https://en.wikipedia.org/wiki/Piano_key_frequencies"
+        )
+    tones = [i - achor_index for i in range(len(keys))]
+    return keys, tones, anchor_note
 
 
 def main():
@@ -83,20 +124,27 @@ def main():
     if not args.verbose:
         warnings.simplefilter('ignore')
 
+    # TODO change this to std lib
     fps, sound = wavfile.read(args.wav.name)
 
-    tones = range(-25, 25)
-    sys.stdout.write('Transponding sound file... ')
-    sys.stdout.flush()
-    transposed_sounds = [pitchshift(sound, n) for n in tones]
+    # 51 semitones = half steps = keys
+    # bowl.wav is 1s lng and contains an 1012 Hz note, close to a B5 or a C6?
+    # TODO fix this for different keyboards
+    tone_count = 43
+    tones = range(tone_count)
+    keys, tones, anchor_note = get_keys_tones_anchor_note(args.keyboard)
+
+    print('Generating samples for each key')
+    # original_transposed_sounds = [pitchshift(sound, n) for n in tones]
+    transposed_sounds = transpose_sounds(
+        args.wav.name, fps, tones, anchor_note)
     print('DONE')
 
     # So flexible ;)
-    pygame.mixer.init(fps, -16, 1, 2048)
+    pygame.mixer.init(fps, 32, 1, 2048)
     # For the focus
     screen = pygame.display.set_mode((150, 150))
 
-    keys = args.keyboard.read().split('\n')
     sounds = map(pygame.sndarray.make_sound, transposed_sounds)
     key_sound = dict(zip(keys, sounds))
     is_playing = {k: False for k in keys}

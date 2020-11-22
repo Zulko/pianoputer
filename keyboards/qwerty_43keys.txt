@@ -1,0 +1,43 @@
+tab
+1
+q
+2
+w
+e
+4
+r
+5
+t
+6
+left shift
+a
+z
+s
+x
+c
+f
+v
+g
+b
+h
+n
+m c4
+k
+,
+l
+.
+/
+'
+right shift
+return
+u
+8
+i
+o
+0
+p
+-
+[
+]
+backspace
+\
