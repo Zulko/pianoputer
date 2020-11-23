@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-from scipy.io import wavfile
 import argparse
-import numpy as np
 import pygame
 import warnings
 import wave
@@ -30,8 +28,6 @@ def parse_arguments():
         type=str,
         default=default_wav_file,
         help='WAV file (default: {})'.format(default_wav_file))
-    # https://github.com/mehrdad-dev/Jami/blob/master/assets/keyboard.jpg
-    # qwerty keyboard
     default_keyboard_file = 'keyboards/qwerty_43keys.txt'
     parser.add_argument(
         '--keyboard', '-k',
@@ -158,7 +154,7 @@ def configure_pygame_audio_and_set_ui(
         screen.blit(keyboard_img, rect)
     pygame.display.update()
 
-def play_until_esc_pressed(
+def play_until_user_exits(
     keys: typing.List[str],
     key_sounds: typing.List[pygame.mixer.Sound]
 ):
@@ -212,7 +208,7 @@ def main():
         'Press the keys on your keyboard. '
         'To exit presss ESC or close the pygame window'
     )
-    play_until_esc_pressed(keys, key_sounds)
+    play_until_user_exits(keys, key_sounds)
 
 
 if __name__ == '__main__':
