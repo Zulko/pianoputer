@@ -22,7 +22,7 @@ world 73
 '
 (
 -
-world 72 c4
+world 72 c6
 _
 world 71
 world 64

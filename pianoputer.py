@@ -12,6 +12,7 @@ import soundfile
 import re
 import typing
 import os
+import shutil
 
 anchor_note_regex = re.compile("[abcdefg]\d$")
 
@@ -36,6 +37,11 @@ def parse_arguments():
         default=default_keyboard_file,
         help='keyboard file (default: {})'.format(default_keyboard_file))
     parser.add_argument(
+        '--clear-cache', '-c',
+        default=False,
+        action='store_true',
+        help='deletes stored transposed audio files and recalculates them')
+    parser.add_argument(
         '--verbose', '-v',
         action='store_true',
         help='verbose mode')
@@ -46,7 +52,8 @@ def transpose_sounds(
     wav_path: str,
     sample_rate_hz: int,
     tones: typing.List[int],
-    anchor_note: str
+    anchor_note: str,
+    clear_cache: bool,
 ):
     sounds = []
     y, sr = librosa.load(wav_path, sr=sample_rate_hz)
@@ -70,6 +77,8 @@ def transpose_sounds(
             )
         )
     folder_path = Path("audio_files/{}".format(file_name))
+    if clear_cache and folder_path.exists():
+        shutil.rmtree(folder_path)
     if not folder_path.exists():
         os.mkdir(folder_path)
     for i, tone in enumerate(tones):
@@ -142,7 +151,7 @@ def main():
     print('Generating samples for each key')
     # original_transposed_sounds = [pitchshift(sound, n) for n in tones]
     transposed_sounds = transpose_sounds(
-        args.wav.name, fps, tones, anchor_note)
+        args.wav.name, fps, tones, anchor_note, args.clear_cache)
     print('DONE')
 
     # So flexible ;)
