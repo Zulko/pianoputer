@@ -16,6 +16,9 @@ import shutil
 
 anchor_note_regex = re.compile("[abcdefg]\d$")
 
+DESCRIPTOR_32BIT = 'FLOAT'
+BITS_32BIT = 32
+
 def parse_arguments():
     description = ('Use your computer keyboard as a "piano"')
 
@@ -24,7 +27,7 @@ def parse_arguments():
     parser.add_argument(
         '--wav', '-w',
         metavar='FILE',
-        type=argparse.FileType('r'),
+        type=str,
         default=default_wav_file,
         help='WAV file (default: {})'.format(default_wav_file))
     # https://github.com/mehrdad-dev/Jami/blob/master/assets/keyboard.jpg
@@ -80,6 +83,7 @@ def transpose_sounds(
     if clear_cache and folder_path.exists():
         shutil.rmtree(folder_path)
     if not folder_path.exists():
+        print('Generating samples for each key')
         os.mkdir(folder_path)
     for i, tone in enumerate(tones):
         cached_path = 'audio_files/{}/{}.wav'.format(file_name, tone)
@@ -94,12 +98,12 @@ def transpose_sounds(
             )
             sound = librosa.effects.pitch_shift(y, sr, n_steps=tone)
             soundfile.write(
-                cached_path, sound, sample_rate_hz, 'FLOAT')
+                cached_path, sound, sample_rate_hz, DESCRIPTOR_32BIT)
         sounds.append(sound)
     sounds = map(pygame.sndarray.make_sound, sounds)
     return sounds
 
-def get_config_info(keyboard_file):
+def get_keyboard_info(keyboard_file):
     lines = keyboard_file.read().split('\n')
     keys = []
     anchor_note = ""
@@ -130,7 +134,15 @@ def get_config_info(keyboard_file):
         keyboard_img = None
     return keys, tones, anchor_note, keyboard_img
 
-def set_ui(keyboard_img: typing.Optional['pygame.image']):
+def configure_pygame_audio_and_set_ui(
+    framerate_hz: int,
+    channels: int,
+    keyboard_img: typing.Optional['pygame.image']
+):
+    # audio
+    pygame.mixer.init(framerate_hz, BITS_32BIT, channels)
+
+    # ui
     BLACK = (0, 0, 0)
     width = 50
     height = 50
@@ -174,26 +186,24 @@ def play_until_esc_pressed(
             is_playing[key] = False
 
 def main():
-    # Parse command line arguments
     args = parse_arguments()
 
     # Enable warnings from scipy if requested
     if not args.verbose:
         warnings.simplefilter('ignore')
 
-    # TODO change this to std lib
-    fps, _sound = wavfile.read(args.wav.name)
-    keys, tones, anchor_note, keyboard_img = get_config_info(args.keyboard)
+    with wave.open(args.wav, 'rb') as wav_file:
+        framerate_hz = wav_file.getframerate()
+        channels = wav_file.getnchannels()
 
-    print('Generating samples for each key')
+    keys, tones, anchor_note, keyboard_img = get_keyboard_info(args.keyboard)
     sounds = transpose_sounds(
-        args.wav.name, fps, tones, anchor_note, args.clear_cache)
-    print('DONE')
-
-    # So flexible ;)
-    # TODO get channels
-    pygame.mixer.init(fps, 32, 1, 2048)
-    set_ui(keyboard_img)
+        args.wav, framerate_hz, tones, anchor_note, args.clear_cache)
+    configure_pygame_audio_and_set_ui(framerate_hz, channels, keyboard_img)
+    print(
+        'Ready for you to play!\n'
+        'Press the keys on your keyboard, press ESC to exit'
+    )
     play_until_esc_pressed(keys, sounds)
 
 
