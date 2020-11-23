@@ -50,10 +50,10 @@ This will let you press the keys in the order that you want, and create a new ke
 - [DONE] confirm that tool works for stereo files too
 - [DONE] add clear-cache command
 - [DONE] update azerty to be anchored at certain location
-- update azerty keyboard to show the anchor key
+- [DONE] update azerty keyboard to show the anchor key
 - make installable through pypi
-- Fix the azerty bow sample to be at a c6
-- allow non-anchor note to be passed in but give a warning
+- Fix the azerty bowl sample to be at a c6
+- allow non-anchor note to be passed in + write note anchor in UI
 - autodetect input file frequency and pitch shift it to the needed start frequency?
 
 ## Attributions
