@@ -163,27 +163,34 @@ def play_until_esc_pressed(
     sounds: typing.List[pygame.mixer.Sound]
 ):
     key_sound = dict(zip(keys, sounds))
-    is_playing = {k: False for k in keys}
+    is_pressed = {k: False for k in keys}
+    playing = True
 
-    while True:
+    while playing:
         event = pygame.event.wait()
 
         if event.type in (pygame.KEYDOWN, pygame.KEYUP):
             key = pygame.key.name(event.key)
 
         if event.type == pygame.KEYDOWN:
-            if (key in key_sound.keys()) and (not is_playing[key]):
+            if (key in key_sound.keys()) and (not is_pressed[key]):
                 key_sound[key].play(fade_ms=50)
-                is_playing[key] = True
+                is_pressed[key] = True
 
             elif event.key == pygame.K_ESCAPE:
                 pygame.quit()
-                raise KeyboardInterrupt
+                playing = False
 
         elif event.type == pygame.KEYUP and key in key_sound.keys():
             # Stops with 50ms fadeout
             key_sound[key].fadeout(50)
-            is_playing[key] = False
+            is_pressed[key] = False
+
+        elif event.type == pygame.QUIT:
+            pygame.quit()
+            playing = False
+
+    print('Goodbye')
 
 def main():
     args = parse_arguments()
@@ -202,13 +209,11 @@ def main():
     configure_pygame_audio_and_set_ui(framerate_hz, channels, keyboard_img)
     print(
         'Ready for you to play!\n'
-        'Press the keys on your keyboard, press ESC to exit'
+        'Press the keys on your keyboard. '
+        'To exit presss ESC or close the pygame window'
     )
     play_until_esc_pressed(keys, sounds)
 
 
 if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        print('Goodbye')
+    main()
