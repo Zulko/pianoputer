@@ -51,7 +51,7 @@ def parse_arguments():
 
     return parser.parse_args()
 
-def transpose_sounds(
+def get_or_create_key_sounds(
     wav_path: str,
     sample_rate_hz: int,
     tones: typing.List[int],
@@ -160,7 +160,7 @@ def configure_pygame_audio_and_set_ui(
 
 def play_until_esc_pressed(
     keys: typing.List[str],
-    sounds: typing.List[pygame.mixer.Sound]
+    key_sounds: typing.List[pygame.mixer.Sound]
 ):
     key_sound = dict(zip(keys, sounds))
     is_pressed = {k: False for k in keys}
@@ -204,7 +204,7 @@ def main():
         channels = wav_file.getnchannels()
 
     keys, tones, anchor_note, keyboard_img = get_keyboard_info(args.keyboard)
-    sounds = transpose_sounds(
+    key_sounds = get_or_create_key_sounds(
         args.wav, framerate_hz, tones, anchor_note, args.clear_cache)
     configure_pygame_audio_and_set_ui(framerate_hz, channels, keyboard_img)
     print(
@@ -212,7 +212,7 @@ def main():
         'Press the keys on your keyboard. '
         'To exit presss ESC or close the pygame window'
     )
-    play_until_esc_pressed(keys, sounds)
+    play_until_esc_pressed(keys, key_sounds)
 
 
 if __name__ == '__main__':
