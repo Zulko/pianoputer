@@ -46,7 +46,7 @@ def parse_arguments():
         action='store_true',
         help='verbose mode')
 
-    return (parser.parse_args(), parser)
+    return parser.parse_args()
 
 def transpose_sounds(
     wav_path: str,
@@ -54,7 +54,7 @@ def transpose_sounds(
     tones: typing.List[int],
     anchor_note: str,
     clear_cache: bool,
-):
+) -> typing.List[pygame.mixer.Sound]:
     sounds = []
     y, sr = librosa.load(wav_path, sr=sample_rate_hz)
     file_name = os.path.splitext(os.path.basename(wav_path))[0]
@@ -96,6 +96,7 @@ def transpose_sounds(
             soundfile.write(
                 cached_path, sound, sample_rate_hz, 'FLOAT')
         sounds.append(sound)
+    sounds = map(pygame.sndarray.make_sound, sounds)
     return sounds
 
 def get_config_info(keyboard_file):
@@ -129,28 +130,7 @@ def get_config_info(keyboard_file):
         keyboard_img = None
     return keys, tones, anchor_note, keyboard_img
 
-
-def main():
-    # Parse command line arguments
-    (args, parser) = parse_arguments()
-
-    # Enable warnings from scipy if requested
-    if not args.verbose:
-        warnings.simplefilter('ignore')
-
-    # TODO change this to std lib
-    fps, sound = wavfile.read(args.wav.name)
-    keys, tones, anchor_note, keyboard_img = get_config_info(args.keyboard)
-
-    print('Generating samples for each key')
-    transposed_sounds = transpose_sounds(
-        args.wav.name, fps, tones, anchor_note, args.clear_cache)
-    print('DONE')
-
-    # So flexible ;)
-    # TODO get channels
-    pygame.mixer.init(fps, 32, 1, 2048)
-    # For the focus
+def set_ui(keyboard_img: typing.Optional['pygame.image']):
     BLACK = (0, 0, 0)
     width = 50
     height = 50
@@ -159,17 +139,17 @@ def main():
         width = rect.width
         height = rect.height
         rect.center = width//2, height//2
+    # For the focus
     screen = pygame.display.set_mode((width, height))
     screen.fill(BLACK)
     if keyboard_img:
         screen.blit(keyboard_img, rect)
     pygame.display.update()
-    # load image
-    # img.convert()
-    # rect = img.get_rect()
-    # rect.center = w//2, h//2
 
-    sounds = map(pygame.sndarray.make_sound, transposed_sounds)
+def play_until_esc_pressed(
+    keys: typing.List[str],
+    sounds: typing.List[pygame.mixer.Sound]
+):
     key_sound = dict(zip(keys, sounds))
     is_playing = {k: False for k in keys}
 
@@ -192,6 +172,29 @@ def main():
             # Stops with 50ms fadeout
             key_sound[key].fadeout(50)
             is_playing[key] = False
+
+def main():
+    # Parse command line arguments
+    args = parse_arguments()
+
+    # Enable warnings from scipy if requested
+    if not args.verbose:
+        warnings.simplefilter('ignore')
+
+    # TODO change this to std lib
+    fps, _sound = wavfile.read(args.wav.name)
+    keys, tones, anchor_note, keyboard_img = get_config_info(args.keyboard)
+
+    print('Generating samples for each key')
+    sounds = transpose_sounds(
+        args.wav.name, fps, tones, anchor_note, args.clear_cache)
+    print('DONE')
+
+    # So flexible ;)
+    # TODO get channels
+    pygame.mixer.init(fps, 32, 1, 2048)
+    set_ui(keyboard_img)
+    play_until_esc_pressed(keys, sounds)
 
 
 if __name__ == '__main__':
