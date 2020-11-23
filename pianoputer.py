@@ -140,16 +140,9 @@ def main():
 
     # TODO change this to std lib
     fps, sound = wavfile.read(args.wav.name)
-
-    # 51 semitones = half steps = keys
-    # bowl.wav is 1s lng and contains an 1012 Hz note, close to a B5 or a C6?
-    # TODO fix this for different keyboards
-    tone_count = 43
-    tones = range(tone_count)
     keys, tones, anchor_note, keyboard_img = get_config_info(args.keyboard)
 
     print('Generating samples for each key')
-    # original_transposed_sounds = [pitchshift(sound, n) for n in tones]
     transposed_sounds = transpose_sounds(
         args.wav.name, fps, tones, anchor_note, args.clear_cache)
     print('DONE')
