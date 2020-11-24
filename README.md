@@ -59,4 +59,5 @@ This will let you press the keys in the order that you want, and create a new ke
 
 ## Attributions
 - qwerty keyboard images By No machine-readable author provided. Denelson83 assumed (based on copyright claims). - No machine-readable source provided. Own work assumed (based on copyright claims)., CC BY-SA 3.0, https://commons.wikimedia.org/w/index.php?curid=508928
+- azerty keyboard images By Monpanda - travail personnel à partir d&#039;une autre image Commons File:Azerty fr.svg, CC BY-SA 3.0, https://commons.wikimedia.org/w/index.php?curid=6935419
 - c4 piano sample from https://en.wikipedia.org/wiki/File:Middle_C.mid
