@@ -5,7 +5,7 @@ setup(
     name = 'pianoputer',
     install_requires = ['librosa >= 0.8.0', 'pygame >= 2.0.0'],
     python_requires='>=3',
-    version = '1.1.0',
+    version = '2.0.0',
     description = 'Use your computer keyboard as a "piano"',
     author = 'Zulko',
     packages = find_packages(),
