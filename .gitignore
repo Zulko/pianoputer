@@ -46,4 +46,4 @@ nosetests.xml
 
 # Folders
 venv/
-audio_files/*/**
+pianoputer/audio_files/*/**

@@ -14,13 +14,16 @@ import numpy
 
 ANCHOR_INDICATOR = ' anchor'
 ANCHOR_NOTE_REGEX = re.compile("[abcdefg]\d$")
+DESCRIPTION = 'Use your computer keyboard as a "piano"'
 DESCRIPTOR_32BIT = 'FLOAT'
 BITS_32BIT = 32
 
-def parse_arguments():
-    description = ('Use your computer keyboard as a "piano"')
+AUDIO_ASSET_PREFIX = 'audio_files/'
+KEYBOARD_ASSET_PREFIX = 'keyboards/'
+CURRENT_WORKING_DIR = Path(__file__).parent.absolute()
 
-    parser = argparse.ArgumentParser(description=description)
+def parse_arguments():
+    parser = argparse.ArgumentParser(description=DESCRIPTION)
     default_wav_file = 'audio_files/piano_c4.wav'
     parser.add_argument(
         '--wav', '-w',
@@ -32,7 +35,7 @@ def parse_arguments():
     parser.add_argument(
         '--keyboard', '-k',
         metavar='FILE',
-        type=argparse.FileType('r'),
+        type=str,
         default=default_keyboard_file,
         help='keyboard file (default: {})'.format(default_keyboard_file))
     parser.add_argument(
@@ -68,14 +71,15 @@ def get_or_create_key_sounds(
                 anchor_note, file_name, anchor_note
             )
         )
-    folder_path = Path("audio_files/{}".format(file_name))
-    if clear_cache and folder_path.exists():
-        shutil.rmtree(folder_path)
-    if not folder_path.exists():
+    folder_containing_wav = Path(wav_path).parent.absolute()
+    cache_folder_path = Path(folder_containing_wav, file_name)
+    if clear_cache and cache_folder_path.exists():
+        shutil.rmtree(cache_folder_path)
+    if not cache_folder_path.exists():
         print('Generating samples for each key')
-        os.mkdir(folder_path)
+        os.mkdir(cache_folder_path)
     for i, tone in enumerate(tones):
-        cached_path = 'audio_files/{}/{}.wav'.format(file_name, tone)
+        cached_path = Path(cache_folder_path, '{}.wav'.format(tone))
         if Path(cached_path).exists():
             print(
                 "Loading note {} out of {} for key {}".format(
@@ -110,7 +114,8 @@ def get_or_create_key_sounds(
     return sounds
 
 def get_keyboard_info(keyboard_file):
-    lines = keyboard_file.read().split('\n')
+    with open(keyboard_file, 'r') as k_file:
+        lines = k_file.readlines()
     keys = []
     anchor_note = ""
     anchor_index = -1
@@ -135,7 +140,7 @@ def get_keyboard_info(keyboard_file):
             "that anchor"
         )
     tones = [i - achor_index for i in range(len(keys))]
-    keyboard_img_path = keyboard_file.name[:-3] + 'png'
+    keyboard_img_path = keyboard_file[:-3] + 'png'
     try:
         keyboard_img = pygame.image.load(keyboard_img_path)
     except FileNotFoundError:
@@ -200,22 +205,29 @@ def play_until_user_exits(
 
     print('Goodbye')
 
-def main():
+def play_pianoputer():
     args = parse_arguments()
 
     # Enable warnings from scipy if requested
     if not args.verbose:
         warnings.simplefilter('ignore')
 
-    audio_data, framerate_hz = soundfile.read(args.wav)
+    wav_path = args.wav
+    if wav_path.startswith(AUDIO_ASSET_PREFIX):
+        wav_path = os.path.join(CURRENT_WORKING_DIR, wav_path)
+    audio_data, framerate_hz = soundfile.read(wav_path)
     try:
         channels = len(audio_data[0])
     except TypeError:
         channels = 1
 
-    keys, tones, keyboard_img = get_keyboard_info(args.keyboard)
+    keyboard_path = args.keyboard
+    if keyboard_path.startswith(KEYBOARD_ASSET_PREFIX):
+        keyboard_path = os.path.join(CURRENT_WORKING_DIR, keyboard_path)
+    keys, tones, keyboard_img = get_keyboard_info(keyboard_path)
+
     key_sounds = get_or_create_key_sounds(
-        args.wav, framerate_hz, channels, tones, args.clear_cache, keys)
+        wav_path, framerate_hz, channels, tones, args.clear_cache, keys)
 
     configure_pygame_audio_and_set_ui(framerate_hz, channels, keyboard_img)
     print(
@@ -227,4 +239,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    play_pianoputer()
