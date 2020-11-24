@@ -53,8 +53,8 @@ This will let you press the keys in the order that you want, and create a new ke
 - [DONE] Fix the azerty bowl sample to be at a c6
 - [DONE] Allow a keyboard to use different anchor notes
 - [DONE] confirm that tool works for stereo files too
+- [DONE] update azerty keyboard image to show the arrow keys
 - make installable through pypi
-- update azerty keyboard image to show the arrow keys
 - add keyboard layout drawing fn, dynamically color the anchor key
 
 ## Attributions
