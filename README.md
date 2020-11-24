@@ -47,14 +47,15 @@ This will let you press the keys in the order that you want, and create a new ke
 - [DONE] update sample to be c4
 - [DONE] have ui show the keyboard image
 - [DONE] have ui be the size of the image
-- [DONE] confirm that tool works for stereo files too
 - [DONE] add clear-cache command
 - [DONE] update azerty to be anchored at certain location
 - [DONE] update azerty keyboard to show the anchor key
 - [DONE] Fix the azerty bowl sample to be at a c6
+- [DONE] Allow a keyboard to use different anchor notes
+- [DONE] confirm that tool works for stereo files too
 - make installable through pypi
-- allow non-anchor note to be passed in + write note anchor in UI
-- autodetect input file frequency and pitch shift it to the needed start frequency?
+- update azerty keyboard image to show the arrow keys
+- add keyboard layout drawing fn, dynamically color the anchor key
 
 ## Attributions
 - qwerty keyboard images By No machine-readable author provided. Denelson83 assumed (based on copyright claims). - No machine-readable source provided. Own work assumed (based on copyright claims)., CC BY-SA 3.0, https://commons.wikimedia.org/w/index.php?curid=508928

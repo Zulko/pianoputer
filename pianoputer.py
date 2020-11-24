@@ -3,7 +3,6 @@
 import argparse
 import pygame
 import warnings
-import wave
 import librosa
 from pathlib import Path
 import soundfile
@@ -11,9 +10,10 @@ import re
 import typing
 import os
 import shutil
+import numpy
 
-anchor_note_regex = re.compile("[abcdefg]\d$")
-
+ANCHOR_INDICATOR = ' anchor'
+ANCHOR_NOTE_REGEX = re.compile("[abcdefg]\d$")
 DESCRIPTOR_32BIT = 'FLOAT'
 BITS_32BIT = 32
 
@@ -50,29 +50,22 @@ def parse_arguments():
 def get_or_create_key_sounds(
     wav_path: str,
     sample_rate_hz: int,
+    channels: int,
     tones: typing.List[int],
-    anchor_note: str,
     clear_cache: bool,
-) -> typing.List[pygame.mixer.Sound]:
+    keys: typing.List[str]
+) -> typing.Generator[pygame.mixer.Sound, None, None]:
     sounds = []
-    y, sr = librosa.load(wav_path, sr=sample_rate_hz)
+    y, sr = librosa.load(wav_path, sr=sample_rate_hz, mono=channels==1)
     file_name = os.path.splitext(os.path.basename(wav_path))[0]
-    match = anchor_note_regex.search(file_name)
+    match = ANCHOR_NOTE_REGEX.search(file_name)
     if not match:
         raise ValueError(
             "Invalid audio file passed in for this keyboard\n"
-            "Keyboard requires anchor note {} and the wave file lacks the "
-            "required anchor note suffix. Pass in {}_{}.wav".format(
+            "The wav file must have an anchor note suffix, "
+            "like _a2.wav, _c3.wav etc.\n"
+            "Add the required anchor note suffix to your wave file".format(
                 anchor_note, file_name, anchor_note
-            )
-        )
-    wav_anchor_note = file_name[-2:]
-    if wav_anchor_note != anchor_note:
-        raise ValueError(
-            "Invalid audio file passed in for this keyboard\n"
-            "Keyboard requires anchor note {} and the wave passed in {}\n"
-            "Pass in {}_{}.wav".format(
-                anchor_note, wav_anchor_note, file_name, anchor_note
             )
         )
     folder_path = Path("audio_files/{}".format(file_name))
@@ -85,14 +78,31 @@ def get_or_create_key_sounds(
         cached_path = 'audio_files/{}/{}.wav'.format(file_name, tone)
         if Path(cached_path).exists():
             print(
-                "Loading note {} out of {}".format(i+1, len(tones))
+                "Loading note {} out of {} for key {}".format(
+                    i+1,
+                    len(tones),
+                    keys[i]
+                )
             )
-            sound, sr = librosa.load(cached_path, sr=sample_rate_hz)
+            sound, sr = librosa.load(
+                cached_path, sr=sample_rate_hz, mono=channels==1)
+            if channels == 2:
+                # the shape must be [length, 2]
+                sound = numpy.transpose(sound)
         else:
             print(
-                "Transposing note {} out of {}".format(i+1, len(tones))
+                "Transposing note {} out of {} for key {}".format(
+                    i+1,
+                    len(tones),
+                    keys[i]
+                )
             )
-            sound = librosa.effects.pitch_shift(y, sr, n_steps=tone)
+            if channels == 1:
+                sound = librosa.effects.pitch_shift(y, sr, n_steps=tone)
+            else:
+                left = librosa.effects.pitch_shift(y[0], sr, n_steps=tone)
+                right = librosa.effects.pitch_shift(y[1], sr, n_steps=tone)
+                sound = numpy.ascontiguousarray(numpy.vstack((left, right)).T)
             soundfile.write(
                 cached_path, sound, sample_rate_hz, DESCRIPTOR_32BIT)
         sounds.append(sound)
@@ -103,24 +113,26 @@ def get_keyboard_info(keyboard_file):
     lines = keyboard_file.read().split('\n')
     keys = []
     anchor_note = ""
-    anchor_index = 0
+    anchor_index = -1
     for i, line in enumerate(lines):
         line = line.strip()
         if not line:
             continue
-        match = anchor_note_regex.search(line)
-        if match:
-            anchor_note = line[-2:]
-            line = line[:-3]
+        try:
+            anchor_index = line.index(ANCHOR_INDICATOR)
+            line = line[:anchor_index]
             achor_index = i
+        except ValueError:
+            pass
         keys.append(line)
-    if not anchor_note:
+    if anchor_index == -1:
         raise ValueError(
             "Invalid keyboard file, one key must have an anchor note written "
             "next to it.\n"
-            "For example 'm c4' c4 refers to middle c at 261.6 hz.\n"
-            "To learn more about the possible anchor notes look here:\n"
-            "https://en.wikipedia.org/wiki/Piano_key_frequencies"
+            "For example 'm anchor'.\n"
+            "That tells the program that the wav file will be used for key m, "
+            "and all other keys will be pitch shifted higher or lower from "
+            "that anchor"
         )
     tones = [i - achor_index for i in range(len(keys))]
     keyboard_img_path = keyboard_file.name[:-3] + 'png'
@@ -128,7 +140,7 @@ def get_keyboard_info(keyboard_file):
         keyboard_img = pygame.image.load(keyboard_img_path)
     except FileNotFoundError:
         keyboard_img = None
-    return keys, tones, anchor_note, keyboard_img
+    return keys, tones, keyboard_img
 
 def configure_pygame_audio_and_set_ui(
     framerate_hz: int,
@@ -158,7 +170,7 @@ def play_until_user_exits(
     keys: typing.List[str],
     key_sounds: typing.List[pygame.mixer.Sound]
 ):
-    key_sound = dict(zip(keys, sounds))
+    sound_by_key = dict(zip(keys, key_sounds))
     is_pressed = {k: False for k in keys}
     playing = True
 
@@ -169,17 +181,17 @@ def play_until_user_exits(
             key = pygame.key.name(event.key)
 
         if event.type == pygame.KEYDOWN:
-            if (key in key_sound.keys()) and (not is_pressed[key]):
-                key_sound[key].play(fade_ms=50)
+            if (key in sound_by_key) and (not is_pressed[key]):
+                sound_by_key[key].play(fade_ms=50)
                 is_pressed[key] = True
 
             elif event.key == pygame.K_ESCAPE:
                 pygame.quit()
                 playing = False
 
-        elif event.type == pygame.KEYUP and key in key_sound.keys():
+        elif event.type == pygame.KEYUP and key in sound_by_key:
             # Stops with 50ms fadeout
-            key_sound[key].fadeout(50)
+            sound_by_key[key].fadeout(50)
             is_pressed[key] = False
 
         elif event.type == pygame.QUIT:
@@ -195,13 +207,16 @@ def main():
     if not args.verbose:
         warnings.simplefilter('ignore')
 
-    with wave.open(args.wav, 'rb') as wav_file:
-        framerate_hz = wav_file.getframerate()
-        channels = wav_file.getnchannels()
+    audio_data, framerate_hz = soundfile.read(args.wav)
+    try:
+        channels = len(audio_data[0])
+    except TypeError:
+        channels = 1
 
-    keys, tones, anchor_note, keyboard_img = get_keyboard_info(args.keyboard)
+    keys, tones, keyboard_img = get_keyboard_info(args.keyboard)
     key_sounds = get_or_create_key_sounds(
-        args.wav, framerate_hz, tones, anchor_note, args.clear_cache)
+        args.wav, framerate_hz, channels, tones, args.clear_cache, keys)
+
     configure_pygame_audio_and_set_ui(framerate_hz, channels, keyboard_img)
     print(
         'Ready for you to play!\n'
