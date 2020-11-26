@@ -17,10 +17,12 @@ ANCHOR_NOTE_REGEX = re.compile("[abcdefg]\d$")
 DESCRIPTION = 'Use your computer keyboard as a "piano"'
 DESCRIPTOR_32BIT = 'FLOAT'
 BITS_32BIT = 32
+SOUND_FADE_MILLISECONDS = 50
 
 AUDIO_ASSET_PREFIX = 'audio_files/'
 KEYBOARD_ASSET_PREFIX = 'keyboards/'
 CURRENT_WORKING_DIR = Path(__file__).parent.absolute()
+ALLOWED_EVENTS = {pygame.KEYDOWN, pygame.KEYUP, pygame.QUIT}
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description=DESCRIPTION)
@@ -156,6 +158,13 @@ def configure_pygame_audio_and_set_ui(
     pygame.mixer.init(framerate_hz, BITS_32BIT, channels)
 
     # ui
+    pygame.display.init()
+
+    # block events that we don't want
+    pygame.event.set_blocked(None)
+    pygame.event.set_allowed(list(ALLOWED_EVENTS))
+
+
     BLACK = (0, 0, 0)
     width = 50
     height = 50
@@ -171,38 +180,37 @@ def configure_pygame_audio_and_set_ui(
         screen.blit(keyboard_img, rect)
     pygame.display.update()
 
+
 def play_until_user_exits(
     keys: typing.List[str],
     key_sounds: typing.List[pygame.mixer.Sound]
 ):
     sound_by_key = dict(zip(keys, key_sounds))
-    is_pressed = {k: False for k in keys}
     playing = True
 
     while playing:
-        event = pygame.event.wait()
+        for event in pygame.event.get():
 
-        if event.type in (pygame.KEYDOWN, pygame.KEYUP):
-            key = pygame.key.name(event.key)
-
-        if event.type == pygame.KEYDOWN:
-            if (key in sound_by_key) and (not is_pressed[key]):
-                sound_by_key[key].play(fade_ms=50)
-                is_pressed[key] = True
-
-            elif event.key == pygame.K_ESCAPE:
-                pygame.quit()
+            if event.type == pygame.QUIT:
                 playing = False
+                break
+            elif event.key == pygame.K_ESCAPE:
+                playing = False
+                break
 
-        elif event.type == pygame.KEYUP and key in sound_by_key:
-            # Stops with 50ms fadeout
-            sound_by_key[key].fadeout(50)
-            is_pressed[key] = False
+            key = pygame.key.name(event.key)
+            try:
+                sound = sound_by_key[key]
+            except KeyError:
+                continue
 
-        elif event.type == pygame.QUIT:
-            pygame.quit()
-            playing = False
+            if event.type == pygame.KEYDOWN:
+                sound.stop()
+                sound.play(fade_ms=SOUND_FADE_MILLISECONDS)
+            elif event.type == pygame.KEYUP:
+                sound.fadeout(SOUND_FADE_MILLISECONDS)
 
+    pygame.quit()
     print('Goodbye')
 
 def play_pianoputer():
