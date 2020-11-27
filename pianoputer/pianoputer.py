@@ -109,7 +109,6 @@ def get_keyboard_info(keyboard_file):
     with open(keyboard_file, 'r') as k_file:
         lines = k_file.readlines()
     keys = []
-    anchor_note = ""
     anchor_index = -1
     for i, line in enumerate(lines):
         line = line.strip()
