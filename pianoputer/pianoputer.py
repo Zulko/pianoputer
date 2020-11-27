@@ -33,7 +33,7 @@ def parse_arguments():
         type=str,
         default=default_wav_file,
         help='WAV file (default: {})'.format(default_wav_file))
-    default_keyboard_file = 'keyboards/qwerty_43keys.txt'
+    default_keyboard_file = 'keyboards/qwerty_piano.txt'
     parser.add_argument(
         '--keyboard', '-k',
         metavar='FILE',

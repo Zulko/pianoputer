@@ -31,10 +31,10 @@ All yellow keys are transposed up and down from the anchor cyan key.
 
 ## Changing the keyboard layout
 
-Note that the default keyboard configuration (stored in file `keyboard_qwerty_43keys.txt`) is for the most commonly used QWERTY keyboards. You can change the configuration so that it matches your keyboard, for instance using the alternative `keyboards/azerty_typewriter.txt`:
+Note that the default keyboard configuration (stored in file `keyboards/qwerty_piano.txt`) is for the most commonly used QWERTY keyboards. You can change the configuration so that it matches your keyboard, for instance using the alternative `keyboards/azerty_typewriter.txt`:
 
 ```
-pianoputer -k keyboards/azerty_typewriter.txt -w audio_files/bowl_c6.wav
+pianoputer -k keyboards/azerty_typewriter.txt
 ```
 
 These `.txt` files simply contain a sequence of key names and are easy to edit. For convenience this repository also provides a `make_kb_file.py` program:
