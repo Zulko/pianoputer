@@ -13,7 +13,7 @@ import shutil
 import numpy
 
 ANCHOR_INDICATOR = ' anchor'
-ANCHOR_NOTE_REGEX = re.compile("[abcdefg]\d$")
+ANCHOR_NOTE_REGEX = re.compile("\s[abcdefg]$")
 DESCRIPTION = 'Use your computer keyboard as a "piano"'
 DESCRIPTOR_32BIT = 'FLOAT'
 BITS_32BIT = 32
@@ -63,16 +63,6 @@ def get_or_create_key_sounds(
     sounds = []
     y, sr = librosa.load(wav_path, sr=sample_rate_hz, mono=channels==1)
     file_name = os.path.splitext(os.path.basename(wav_path))[0]
-    match = ANCHOR_NOTE_REGEX.search(file_name)
-    if not match:
-        raise ValueError(
-            "Invalid audio file passed in for this keyboard\n"
-            "The wav file must have an anchor note suffix, "
-            "like _a2.wav, _c3.wav etc.\n"
-            "Add the required anchor note suffix to your wave file".format(
-                anchor_note, file_name, anchor_note
-            )
-        )
     folder_containing_wav = Path(wav_path).parent.absolute()
     cache_folder_path = Path(folder_containing_wav, file_name)
     if clear_cache and cache_folder_path.exists():
@@ -125,23 +115,21 @@ def get_keyboard_info(keyboard_file):
         line = line.strip()
         if not line:
             continue
-        try:
-            anchor_index = line.index(ANCHOR_INDICATOR)
-            line = line[:anchor_index]
-            achor_index = i
-        except ValueError:
-            pass
+        match = ANCHOR_NOTE_REGEX.search(line)
+        if match:
+            anchor_index = i
+            line = line[:match.start(0)]
         keys.append(line)
     if anchor_index == -1:
         raise ValueError(
             "Invalid keyboard file, one key must have an anchor note written "
             "next to it.\n"
-            "For example 'm anchor'.\n"
+            "For example 'm c'.\n"
             "That tells the program that the wav file will be used for key m, "
             "and all other keys will be pitch shifted higher or lower from "
-            "that anchor"
+            "that anchor and key colors (black/white) are set by that anchor"
         )
-    tones = [i - achor_index for i in range(len(keys))]
+    tones = [i - anchor_index for i in range(len(keys))]
     keyboard_img_path = keyboard_file[:-3] + 'png'
     try:
         keyboard_img = pygame.image.load(keyboard_img_path)
