@@ -13,8 +13,9 @@ pianoputer
 
 After a few seconds, the below image will appear in a window, indicating that the program is ready.
 The cyan key is the key that the sample wav file is assigned to. By default this is c4, [the piano middle C at 261.6 hz](https://en.wikipedia.org/wiki/Piano_key_frequencies)
+All white and black keys are transposed up and down from the anchor cyan key.
 
-![qwerty keyboard layout, c4 is cyan](./pianoputer/keyboards/qwerty_43keys.png "qwerty keyboard layout, c4 is cyan")
+![qwerty keyboard layout, c4 is cyan](./pianoputer/keyboards/qwerty_piano.png "qwerty keyboard layout, c4 is cyan")
 
 ## Changing the sound file
 
@@ -27,7 +28,7 @@ For example:
 ```
 pianoputer -w audio_files/bowl_c6.wav
 ```
-All yellow keys are transposed up and down from the anchor cyan key.
+All white and black keys are transposed up and down from the anchor cyan key.
 
 ## Changing the keyboard layout
 
