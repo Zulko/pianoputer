@@ -11,6 +11,8 @@ import typing
 import os
 import shutil
 import numpy
+import keyboardlayout as kl
+from collections import defaultdict
 
 ANCHOR_INDICATOR = ' anchor'
 ANCHOR_NOTE_REGEX = re.compile("\s[abcdefg]$")
@@ -105,7 +107,7 @@ def get_or_create_key_sounds(
     sounds = map(pygame.sndarray.make_sound, sounds)
     return sounds
 
-def get_keyboard_info(keyboard_file):
+def get_keyboard_info(keyboard_file: str):
     with open(keyboard_file, 'r') as k_file:
         lines = k_file.readlines()
     keys = []
@@ -129,42 +131,83 @@ def get_keyboard_info(keyboard_file):
             "that anchor and key colors (black/white) are set by that anchor"
         )
     tones = [i - anchor_index for i in range(len(keys))]
-    keyboard_img_path = keyboard_file[:-3] + 'png'
-    try:
-        keyboard_img = pygame.image.load(keyboard_img_path)
-    except FileNotFoundError:
-        keyboard_img = None
-    return keys, tones, keyboard_img
+    color_name_to_key_name = defaultdict(list)
+    for index, key_name in enumerate(keys):
+        if index == anchor_index:
+            color_name_to_key_name['cyan'].append(key_name)
+        else:
+            color_name_to_key_name['white'].append(key_name)
+    return keys, tones, color_name_to_key_name
 
 def configure_pygame_audio_and_set_ui(
     framerate_hz: int,
     channels: int,
-    keyboard_img: typing.Optional['pygame.image']
+    keyboard_arg: str,
+    color_name_to_key_name: typing.Dict[str, typing.List[str]]
 ):
-    # audio
-    pygame.mixer.init(framerate_hz, BITS_32BIT, channels)
-
     # ui
     pygame.display.init()
+
+    # fonts
+    pygame.font.init()
+
+    # audio
+    pygame.mixer.init(framerate_hz, BITS_32BIT, channels)
 
     # block events that we don't want
     pygame.event.set_blocked(None)
     pygame.event.set_allowed(list(ALLOWED_EVENTS))
 
+    keyboard_layout = None
+    screen_width = 50
+    screen_height = 50
+    layout_name = None
+    if 'qwerty' in keyboard_arg:
+        layout_name = 'qwerty'
+    elif 'azerty' in keyboard_arg:
+        layout_name = 'azerty_laptop'
+    if layout_name:
+        key_size = 60
+        overrides = {}
+        for color_name, key_names in color_name_to_key_name.items():
+            override_color = color=pygame.Color(color_name)
+            override_key_info = kl.KeyInfo(
+                margin=10,
+                color=override_color,
+                txt_color=pygame.Color('black'),
+                txt_font=pygame.font.SysFont('Arial', key_size//4),
+                txt_padding=(key_size//10, key_size//10),
+            )
+            for key_name in key_names:
+                overrides[key_name] = override_key_info
+        grey = pygame.Color('grey')
+        keyboard_info = kl.KeyboardInfo(
+            position=(0, 0),
+            padding=2,
+            color=~grey
+        )
+        key_info = kl.KeyInfo(
+            margin=10,
+            color=grey,
+            txt_color=~grey,  # invert grey
+            txt_font=pygame.font.SysFont('Arial', key_size//4),
+            txt_padding=(key_size//6, key_size//10)
+        )
+        letter_key_size = (key_size, key_size)  # width, height
+        keyboard_layout = kl.KeyboardLayout(
+            layout_name,
+            keyboard_info,
+            letter_key_size,
+            key_info,
+            overrides
+        )
+        screen_width = keyboard_layout.rect.width
+        screen_height = keyboard_layout.rect.height
 
-    BLACK = (0, 0, 0)
-    width = 50
-    height = 50
-    if keyboard_img:
-        rect = keyboard_img.get_rect()
-        width = rect.width
-        height = rect.height
-        rect.center = width//2, height//2
-    # For the focus
-    screen = pygame.display.set_mode((width, height))
-    screen.fill(BLACK)
-    if keyboard_img:
-        screen.blit(keyboard_img, rect)
+    screen = pygame.display.set_mode((screen_width, screen_height))
+    screen.fill(pygame.Color('black'))
+    if keyboard_layout:
+        keyboard_layout.draw(screen)
     pygame.display.update()
 
 
@@ -219,12 +262,13 @@ def play_pianoputer():
     keyboard_path = args.keyboard
     if keyboard_path.startswith(KEYBOARD_ASSET_PREFIX):
         keyboard_path = os.path.join(CURRENT_WORKING_DIR, keyboard_path)
-    keys, tones, keyboard_img = get_keyboard_info(keyboard_path)
+    keys, tones, color_name_to_key_name = get_keyboard_info(keyboard_path)
 
     key_sounds = get_or_create_key_sounds(
         wav_path, framerate_hz, channels, tones, args.clear_cache, keys)
 
-    configure_pygame_audio_and_set_ui(framerate_hz, channels, keyboard_img)
+    configure_pygame_audio_and_set_ui(
+        framerate_hz, channels, args.keyboard, color_name_to_key_name)
     print(
         'Ready for you to play!\n'
         'Press the keys on your keyboard. '

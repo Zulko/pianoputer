@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'pianoputer',
-    install_requires = ['librosa >= 0.8.0', 'pygame >= 2.0.0'],
+    install_requires = ['librosa >= 0.8.0', 'pygame >= 2.0.0', 'keyboardlayout >= 1.0.0'],
     python_requires='>=3',
     version = '2.0.0',
     description = 'Use your computer keyboard as a "piano"',
