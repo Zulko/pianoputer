@@ -107,6 +107,27 @@ def get_or_create_key_sounds(
     sounds = map(pygame.sndarray.make_sound, sounds)
     return sounds
 
+BLACK_INDICES_C_SCALE = [1, 3, 6, 8, 10]
+LETTER_KEYS_TO_INDEX = {
+    'c': 0,
+    'd': 2,
+    'e': 4,
+    'f': 5,
+    'g': 7,
+    'a': 9,
+    'b': 11
+}
+
+def __get_black_key_indices(key_name: str):
+    letter_key_index = LETTER_KEYS_TO_INDEX[key_name]
+    black_key_indices = set()
+    for ind in BLACK_INDICES_C_SCALE:
+        new_index = (ind - letter_key_index)
+        if new_index < 0:
+            new_index += 12
+        black_key_indices.add(new_index)
+    return black_key_indices
+
 def get_keyboard_info(keyboard_file: str):
     with open(keyboard_file, 'r') as k_file:
         lines = k_file.readlines()
@@ -119,6 +140,7 @@ def get_keyboard_info(keyboard_file: str):
         match = ANCHOR_NOTE_REGEX.search(line)
         if match:
             anchor_index = i
+            black_key_indices = __get_black_key_indices(line[-1])
             line = line[:match.start(0)]
         keys.append(line)
     if anchor_index == -1:
@@ -135,8 +157,12 @@ def get_keyboard_info(keyboard_file: str):
     for index, key_name in enumerate(keys):
         if index == anchor_index:
             color_name_to_key_name['cyan'].append(key_name)
-        else:
-            color_name_to_key_name['white'].append(key_name)
+            continue
+        used_index = (index - anchor_index) % 12
+        if used_index in black_key_indices:
+            color_name_to_key_name['black'].append(key_name)
+            continue
+        color_name_to_key_name['white'].append(key_name)
     return keys, tones, color_name_to_key_name
 
 def configure_pygame_audio_and_set_ui(
@@ -174,7 +200,7 @@ def configure_pygame_audio_and_set_ui(
             override_key_info = kl.KeyInfo(
                 margin=10,
                 color=override_color,
-                txt_color=pygame.Color('black'),
+                txt_color=~override_color,
                 txt_font=pygame.font.SysFont('Arial', key_size//4),
                 txt_padding=(key_size//10, key_size//10),
             )
@@ -188,7 +214,7 @@ def configure_pygame_audio_and_set_ui(
         )
         key_info = kl.KeyInfo(
             margin=10,
-            color=grey,
+            color=pygame.Color('grey50'),
             txt_color=~grey,  # invert grey
             txt_font=pygame.font.SysFont('Arial', key_size//4),
             txt_padding=(key_size//6, key_size//10)
