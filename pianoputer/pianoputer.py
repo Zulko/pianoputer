@@ -173,6 +173,7 @@ def configure_pygame_audio_and_set_ui(
 ):
     # ui
     pygame.display.init()
+    pygame.display.set_caption('pianoputer')
 
     # fonts
     pygame.font.init()
@@ -193,12 +194,13 @@ def configure_pygame_audio_and_set_ui(
     elif 'azerty' in keyboard_arg:
         layout_name = 'azerty_laptop'
     if layout_name:
+        margin = 4
         key_size = 60
         overrides = {}
         for color_name, key_names in color_name_to_key_name.items():
             override_color = color=pygame.Color(color_name)
             override_key_info = kl.KeyInfo(
-                margin=10,
+                margin=margin,
                 color=override_color,
                 txt_color=~override_color,
                 txt_font=pygame.font.SysFont('Arial', key_size//4),
@@ -213,7 +215,7 @@ def configure_pygame_audio_and_set_ui(
             color=~grey
         )
         key_info = kl.KeyInfo(
-            margin=10,
+            margin=margin,
             color=pygame.Color('grey50'),
             txt_color=~grey,  # invert grey
             txt_font=pygame.font.SysFont('Arial', key_size//4),
