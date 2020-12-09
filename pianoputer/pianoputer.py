@@ -26,7 +26,7 @@ KEYBOARD_ASSET_PREFIX = 'keyboards/'
 CURRENT_WORKING_DIR = Path(__file__).parent.absolute()
 ALLOWED_EVENTS = {pygame.KEYDOWN, pygame.KEYUP, pygame.QUIT}
 
-def parse_arguments():
+def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=DESCRIPTION)
     default_wav_file = 'audio_files/piano_c4.wav'
     parser.add_argument(
@@ -52,7 +52,7 @@ def parse_arguments():
         action='store_true',
         help='verbose mode')
 
-    return parser.parse_args()
+    return parser
 
 def get_or_create_key_sounds(
     wav_path: str,
@@ -170,7 +170,7 @@ def configure_pygame_audio_and_set_ui(
     channels: int,
     keyboard_arg: str,
     color_name_to_key_name: typing.Dict[str, typing.List[str]]
-):
+) -> pygame.Surface:
     # ui
     pygame.display.init()
     pygame.display.set_caption('pianoputer')
@@ -237,6 +237,7 @@ def configure_pygame_audio_and_set_ui(
     if keyboard_layout:
         keyboard_layout.draw(screen)
     pygame.display.update()
+    return screen
 
 
 def play_until_user_exits(
@@ -271,8 +272,22 @@ def play_until_user_exits(
     pygame.quit()
     print('Goodbye')
 
-def play_pianoputer():
-    args = parse_arguments()
+def get_audio_data(wav_path: str) -> typing.Tuple:
+    audio_data, framerate_hz = soundfile.read(wav_path)
+    try:
+        channels = len(audio_data[0])
+    except TypeError:
+        channels = 1
+    return audio_data, framerate_hz, channels
+
+def process_args(
+    parser: argparse.ArgumentParser,
+    args: typing.Optional[typing.List] = None
+) -> typing.Tuple:
+    if args:
+        args = parser.parse_args(args)
+    else:
+        args = parser.parse_args()
 
     # Enable warnings from scipy if requested
     if not args.verbose:
@@ -281,22 +296,22 @@ def play_pianoputer():
     wav_path = args.wav
     if wav_path.startswith(AUDIO_ASSET_PREFIX):
         wav_path = os.path.join(CURRENT_WORKING_DIR, wav_path)
-    audio_data, framerate_hz = soundfile.read(wav_path)
-    try:
-        channels = len(audio_data[0])
-    except TypeError:
-        channels = 1
 
     keyboard_path = args.keyboard
     if keyboard_path.startswith(KEYBOARD_ASSET_PREFIX):
         keyboard_path = os.path.join(CURRENT_WORKING_DIR, keyboard_path)
+    return wav_path, keyboard_path, args.clear_cache
+
+def play_pianoputer():
+    parser = get_parser()
+    wav_path, keyboard_path, clear_cache = process_args(parser)
+    audio_data, framerate_hz, channels = get_audio_data(wav_path)
     keys, tones, color_name_to_key_name = get_keyboard_info(keyboard_path)
-
     key_sounds = get_or_create_key_sounds(
-        wav_path, framerate_hz, channels, tones, args.clear_cache, keys)
+        wav_path, framerate_hz, channels, tones, clear_cache, keys)
 
-    configure_pygame_audio_and_set_ui(
-        framerate_hz, channels, args.keyboard, color_name_to_key_name)
+    _screen = configure_pygame_audio_and_set_ui(
+        framerate_hz, channels, keyboard_path, color_name_to_key_name)
     print(
         'Ready for you to play!\n'
         'Press the keys on your keyboard. '

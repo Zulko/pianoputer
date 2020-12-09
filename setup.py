@@ -1,5 +1,10 @@
 
 from setuptools import setup, find_packages
+import pathlib
+
+this_directory = pathlib.Path(__file__).parent
+with open(this_directory / 'README.md', encoding='utf-8') as f:
+    long_description = f.read()
 
 setup(
     name = 'pianoputer',
@@ -16,6 +21,15 @@ setup(
     },
     license='see LICENSE.txt',
     keywords = ["piano", "keyboard", "synthesizer"],
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest'],
+    extras_require={
+        'dev': [
+            'setuptools',
+            'wheel',
+            'twine',
+        ]
+    },
     classifiers = [
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
@@ -29,5 +43,5 @@ setup(
         'Topic :: Multimedia :: Sound/Audio',
         'Topic :: Multimedia :: Sound/Audio :: Players'
     ],
-    long_description = 'Use your computer keyboard as a "piano"'
+    long_description = long_description
 )

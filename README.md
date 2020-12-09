@@ -1,6 +1,6 @@
 # Pianoputer
 
-This repository contains a minimal code to play on your computer keyboard like if it was a piano, an instrument that I call the Pianoputer (yeah I am not very good at names). Here is a [video](https://www.youtube.com/watch?v=z410eauCnHc) of the program in action.
+This library allows you to play on your computer keyboard like if it was a piano, an instrument that I call the Pianoputer. Here is a [video](https://www.youtube.com/watch?v=z410eauCnHc) of the program in action with an azerty keyboard.
 
 
 ## Play!
@@ -15,7 +15,7 @@ After a few seconds, the below image will appear in a window, indicating that th
 The cyan key is the key that the sample wav file is assigned to. By default this is c4, [the piano middle C at 261.6 hz](https://en.wikipedia.org/wiki/Piano_key_frequencies)
 All white and black keys are transposed up and down from the anchor cyan key.
 
-![qwerty keyboard layout, c4 is cyan](./pianoputer/keyboards/qwerty_piano.png "qwerty keyboard layout, c4 is cyan")
+![qwerty keyboard layout, c4 is cyan](./pianoputer/keyboards/qwerty_piano.jpg "qwerty keyboard layout, c4 is cyan")
 
 ## Changing the sound file
 
@@ -57,6 +57,10 @@ pianoputer
 ```
 
 ## Attributions
-- qwerty keyboard images By No machine-readable author provided. Denelson83 assumed (based on copyright claims). - No machine-readable source provided. Own work assumed (based on copyright claims)., CC BY-SA 3.0, https://commons.wikimedia.org/w/index.php?curid=508928
-- azerty keyboard images By Monpanda - travail personnel à partir d&#039;une autre image Commons File:Azerty fr.svg, CC BY-SA 3.0, https://commons.wikimedia.org/w/index.php?curid=6935419
 - c4 piano sample from https://en.wikipedia.org/wiki/File:Middle_C.mid
+
+## TODO
+- allow the word anchor as an anchor, if so then color active keys in ascending white
+- update key identifiers to use different info?
+  - use char info and fall back to keysym, a -> a, delete -> BackSpace
+- maybe switch to tkinter for better keyboard handling
