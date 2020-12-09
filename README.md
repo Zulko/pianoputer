@@ -1,7 +1,6 @@
 # Pianoputer
 
-This library allows you to play on your computer keyboard like if it was a piano, an instrument that I call the Pianoputer. Here is a [video](https://www.youtube.com/watch?v=z410eauCnHc) of the program in action with an azerty keyboard.
-
+This library lets you to play your computer keyboard like a piano. Here is a [video](https://www.youtube.com/watch?v=z410eauCnHc) of it in action on a French azerty keyboard.
 
 ## Play!
 
