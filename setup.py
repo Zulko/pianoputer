@@ -13,6 +13,7 @@ setup(
     version = '2.0.0',
     description = 'Use your computer keyboard as a "piano"',
     author = 'Zulko',
+    maintainer='Justin Black',
     packages = find_packages(),
     include_package_data=True,
     url = "https://github.com/Zulko/pianoputer",
