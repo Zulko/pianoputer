@@ -59,10 +59,5 @@ pianoputer
 - c4 piano sample from https://en.wikipedia.org/wiki/File:Middle_C.mid
 
 ## TODO
-- get azerty working
-  - map key strings to keyboardlayout keys
-  - use those keys as the key to sound in the key to sound map
-  - get the key from the event
-- limit setup.py instal to python <= 3.9 because somehow lvmlite is needed and https://github.com/numba/llvmlite/issues/530#issuecomment-555673204 -> https://github.com/numba/numba/issues/6345
 - allow the word anchor as an anchor, if so then color active keys in ascending white
-- maybe switch to tkinter for better keyboard handling
+- limit setup.py instal to python <= 3.9 because somehow lvmlite is needed and https://github.com/numba/llvmlite/issues/530#issuecomment-555673204 -> https://github.com/numba/numba/issues/6345
