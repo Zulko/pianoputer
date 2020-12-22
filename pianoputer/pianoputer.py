@@ -77,7 +77,7 @@ def get_or_create_key_sounds(
         cached_path = Path(cache_folder_path, '{}.wav'.format(tone))
         if Path(cached_path).exists():
             print(
-                "Loading note {} out of {} for key {}".format(
+                "Loading note {} out of {} for {}".format(
                     i+1,
                     len(tones),
                     keys[i]
@@ -161,22 +161,38 @@ def get_keyboard_info(keyboard_file: str):
         )
     tones = [i - anchor_index for i in range(len(keys))]
     color_name_to_key = defaultdict(list)
+    if black_key_indices:
+        key_color = (120, 120, 120, 255)
+        key_txt_color = (50, 50, 50, 255)
+    else:
+        key_color = (0, 0, 0, 255)
+        key_txt_color = (75, 75, 75, 255)
     for index, key in enumerate(keys):
         if index == anchor_index:
             color_name_to_key['cyan'].append(key)
             continue
-        used_index = (index - anchor_index) % 12
-        if used_index in black_key_indices:
-            color_name_to_key['black'].append(key)
+        if black_key_indices:
+            used_index = (index - anchor_index) % 12
+            if used_index in black_key_indices:
+                color_name_to_key['black'].append(key)
+                continue
+            color_name_to_key['white'].append(key)
             continue
-        color_name_to_key['white'].append(key)
-    return keys, tones, color_name_to_key
+        # anchor mode, keys go up in half steps and we do not color black keys
+        # instead we color from grey low to white high
+        rgb_val = 255 - (len(keys) - 1 - index)*2
+        color = (rgb_val, rgb_val, rgb_val, 255)
+        color_name_to_key[color].append(key)
+
+    return keys, tones, color_name_to_key, key_color, key_txt_color
 
 def configure_pygame_audio_and_set_ui(
     framerate_hz: int,
     channels: int,
     keyboard_arg: str,
-    color_name_to_key: typing.Dict[str, typing.List[kl.Key]]
+    color_name_to_key: typing.Dict[str, typing.List[kl.Key]],
+    key_color: typing.Tuple[int, int, int, int],
+    key_txt_color: typing.Tuple[int, int, int, int],
 ) -> typing.Tuple[pygame.Surface, klp.KeyboardLayout]:
     # ui
     pygame.display.init()
@@ -194,50 +210,50 @@ def configure_pygame_audio_and_set_ui(
 
     screen_width = 50
     screen_height = 50
-    layout_name = None
     if 'qwerty' in keyboard_arg:
         layout_name = kl.LayoutName.QWERTY
     elif 'azerty' in keyboard_arg:
         layout_name = kl.LayoutName.AZERTY_LAPTOP
-    keyboard = None
-    if layout_name:
-        margin = 4
-        key_size = 60
-        overrides = {}
-        for color_name, keys in color_name_to_key.items():
-            override_color = color=pygame.Color(color_name)
-            override_key_info = kl.KeyInfo(
-                margin=margin,
-                color=override_color,
-                txt_color=~override_color,
-                txt_font=pygame.font.SysFont('Arial', key_size//4),
-                txt_padding=(key_size//10, key_size//10),
-            )
-            for key in keys:
-                overrides[key.value] = override_key_info
-        grey = pygame.Color('grey')
-        keyboard_info = kl.KeyboardInfo(
-            position=(0, 0),
-            padding=2,
-            color=~grey
-        )
-        key_info = kl.KeyInfo(
+    else:
+        ValueError('keyboard must have qwerty or azerty in its name')
+    margin = 4
+    key_size = 60
+    overrides = {}
+    for color_value, keys in color_name_to_key.items():
+        override_color = color=pygame.Color(color_value)
+        override_key_info = kl.KeyInfo(
             margin=margin,
-            color=pygame.Color('grey50'),
-            txt_color=~grey,  # invert grey
+            color=override_color,
+            txt_color=~override_color,
             txt_font=pygame.font.SysFont('Arial', key_size//4),
-            txt_padding=(key_size//6, key_size//10)
+            txt_padding=(key_size//10, key_size//10),
         )
-        letter_key_size = (key_size, key_size)  # width, height
-        keyboard = klp.KeyboardLayout(
-            layout_name,
-            keyboard_info,
-            letter_key_size,
-            key_info,
-            overrides
-        )
-        screen_width = keyboard.rect.width
-        screen_height = keyboard.rect.height
+        for key in keys:
+            overrides[key.value] = override_key_info
+
+    key_txt_color = pygame.Color(key_txt_color)
+    keyboard_info = kl.KeyboardInfo(
+        position=(0, 0),
+        padding=2,
+        color=key_txt_color
+    )
+    key_info = kl.KeyInfo(
+        margin=margin,
+        color=pygame.Color(key_color),
+        txt_color=pygame.Color(key_txt_color),
+        txt_font=pygame.font.SysFont('Arial', key_size//4),
+        txt_padding=(key_size//6, key_size//10)
+    )
+    letter_key_size = (key_size, key_size)  # width, height
+    keyboard = klp.KeyboardLayout(
+        layout_name,
+        keyboard_info,
+        letter_key_size,
+        key_info,
+        overrides
+    )
+    screen_width = keyboard.rect.width
+    screen_height = keyboard.rect.height
 
     screen = pygame.display.set_mode((screen_width, screen_height))
     screen.fill(pygame.Color('black'))
@@ -316,12 +332,19 @@ def play_pianoputer():
     parser = get_parser()
     wav_path, keyboard_path, clear_cache = process_args(parser)
     audio_data, framerate_hz, channels = get_audio_data(wav_path)
-    keys, tones, color_name_to_key = get_keyboard_info(keyboard_path)
+    results = get_keyboard_info(keyboard_path)
+    keys, tones, color_name_to_key, key_color, key_txt_color = results
     key_sounds = get_or_create_key_sounds(
         wav_path, framerate_hz, channels, tones, clear_cache, keys)
 
     _screen, keyboard = configure_pygame_audio_and_set_ui(
-        framerate_hz, channels, keyboard_path, color_name_to_key)
+        framerate_hz,
+        channels,
+        keyboard_path,
+        color_name_to_key,
+        key_color,
+        key_txt_color
+    )
     print(
         'Ready for you to play!\n'
         'Press the keys on your keyboard. '

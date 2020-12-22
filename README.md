@@ -36,7 +36,7 @@ Note that the default keyboard configuration (stored in file `keyboards/qwerty_p
 ```
 pianoputer -k keyboards/azerty_typewriter.txt
 ```
-
+![azerty laptop](./pianoputer/keyboards/azerty_typewriter.jpg "azerty laptop keyboard layout")
 These `.txt` files simply contain a sequence of key names and are easy to edit. For convenience this repository also provides a `make_kb_file.py` program:
 ```
 python make_kb_file.py
@@ -57,7 +57,3 @@ pianoputer
 
 ## Attributions
 - c4 piano sample from https://en.wikipedia.org/wiki/File:Middle_C.mid
-
-## TODO
-- allow the word anchor as an anchor, if so then color active keys in ascending white
-- limit setup.py instal to python <= 3.9 because somehow lvmlite is needed and https://github.com/numba/llvmlite/issues/530#issuecomment-555673204 -> https://github.com/numba/numba/issues/6345
