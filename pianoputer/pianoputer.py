@@ -16,7 +16,7 @@ import keyboardlayout.pygame as klp
 from collections import defaultdict
 
 ANCHOR_INDICATOR = ' anchor'
-ANCHOR_NOTE_REGEX = re.compile("\s[abcdefg]$")
+ANCHOR_NOTE_REGEX = re.compile(r"\s[abcdefg]$")
 DESCRIPTION = 'Use your computer keyboard as a "piano"'
 DESCRIPTOR_32BIT = 'FLOAT'
 BITS_32BIT = 32
@@ -119,7 +119,7 @@ LETTER_KEYS_TO_INDEX = {
     'b': 11
 }
 
-def __get_black_key_indices(key_name: str):
+def __get_black_key_indices(key_name: str) -> set:
     letter_key_index = LETTER_KEYS_TO_INDEX[key_name]
     black_key_indices = set()
     for ind in BLACK_INDICES_C_SCALE:
@@ -134,6 +134,7 @@ def get_keyboard_info(keyboard_file: str):
         lines = k_file.readlines()
     keys = []
     anchor_index = -1
+    black_key_indices = set()
     for i, line in enumerate(lines):
         line = line.strip()
         if not line:
@@ -143,6 +144,9 @@ def get_keyboard_info(keyboard_file: str):
             anchor_index = i
             black_key_indices = __get_black_key_indices(line[-1])
             key = kl.Key(line[:match.start(0)])
+        elif line.endswith(ANCHOR_INDICATOR):
+            anchor_index = i
+            key = kl.Key(line[:-len(ANCHOR_INDICATOR)])
         else:
             key = kl.Key(line)
         keys.append(key)
@@ -313,8 +317,6 @@ def play_pianoputer():
     wav_path, keyboard_path, clear_cache = process_args(parser)
     audio_data, framerate_hz, channels = get_audio_data(wav_path)
     keys, tones, color_name_to_key = get_keyboard_info(keyboard_path)
-    print(keys)
-    print(color_name_to_key)
     key_sounds = get_or_create_key_sounds(
         wav_path, framerate_hz, channels, tones, clear_cache, keys)
 
