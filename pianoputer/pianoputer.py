@@ -142,8 +142,10 @@ def get_keyboard_info(keyboard_file: str):
         if match:
             anchor_index = i
             black_key_indices = __get_black_key_indices(line[-1])
-            line = line[:match.start(0)]
-        keys.append(line)
+            key = kl.Key(line[:match.start(0)])
+        else:
+            key = kl.Key(line)
+        keys.append(key)
     if anchor_index == -1:
         raise ValueError(
             "Invalid keyboard file, one key must have an anchor note written "
@@ -154,24 +156,24 @@ def get_keyboard_info(keyboard_file: str):
             "that anchor and key colors (black/white) are set by that anchor"
         )
     tones = [i - anchor_index for i in range(len(keys))]
-    color_name_to_key_name = defaultdict(list)
-    for index, key_name in enumerate(keys):
+    color_name_to_key = defaultdict(list)
+    for index, key in enumerate(keys):
         if index == anchor_index:
-            color_name_to_key_name['cyan'].append(key_name)
+            color_name_to_key['cyan'].append(key)
             continue
         used_index = (index - anchor_index) % 12
         if used_index in black_key_indices:
-            color_name_to_key_name['black'].append(key_name)
+            color_name_to_key['black'].append(key)
             continue
-        color_name_to_key_name['white'].append(key_name)
-    return keys, tones, color_name_to_key_name
+        color_name_to_key['white'].append(key)
+    return keys, tones, color_name_to_key
 
 def configure_pygame_audio_and_set_ui(
     framerate_hz: int,
     channels: int,
     keyboard_arg: str,
-    color_name_to_key_name: typing.Dict[str, typing.List[str]]
-) -> pygame.Surface:
+    color_name_to_key: typing.Dict[str, typing.List[kl.Key]]
+) -> typing.Tuple[pygame.Surface, klp.KeyboardLayout]:
     # ui
     pygame.display.init()
     pygame.display.set_caption('pianoputer')
@@ -186,7 +188,6 @@ def configure_pygame_audio_and_set_ui(
     pygame.event.set_blocked(None)
     pygame.event.set_allowed(list(ALLOWED_EVENTS))
 
-    keyboard_layout = None
     screen_width = 50
     screen_height = 50
     layout_name = None
@@ -194,11 +195,12 @@ def configure_pygame_audio_and_set_ui(
         layout_name = kl.LayoutName.QWERTY
     elif 'azerty' in keyboard_arg:
         layout_name = kl.LayoutName.AZERTY_LAPTOP
+    keyboard = None
     if layout_name:
         margin = 4
         key_size = 60
         overrides = {}
-        for color_name, key_names in color_name_to_key_name.items():
+        for color_name, keys in color_name_to_key.items():
             override_color = color=pygame.Color(color_name)
             override_key_info = kl.KeyInfo(
                 margin=margin,
@@ -207,8 +209,8 @@ def configure_pygame_audio_and_set_ui(
                 txt_font=pygame.font.SysFont('Arial', key_size//4),
                 txt_padding=(key_size//10, key_size//10),
             )
-            for key_name in key_names:
-                overrides[key_name] = override_key_info
+            for key in keys:
+                overrides[key.value] = override_key_info
         grey = pygame.Color('grey')
         keyboard_info = kl.KeyboardInfo(
             position=(0, 0),
@@ -223,27 +225,28 @@ def configure_pygame_audio_and_set_ui(
             txt_padding=(key_size//6, key_size//10)
         )
         letter_key_size = (key_size, key_size)  # width, height
-        keyboard_layout = klp.KeyboardLayout(
+        keyboard = klp.KeyboardLayout(
             layout_name,
             keyboard_info,
             letter_key_size,
             key_info,
             overrides
         )
-        screen_width = keyboard_layout.rect.width
-        screen_height = keyboard_layout.rect.height
+        screen_width = keyboard.rect.width
+        screen_height = keyboard.rect.height
 
     screen = pygame.display.set_mode((screen_width, screen_height))
     screen.fill(pygame.Color('black'))
-    if keyboard_layout:
-        keyboard_layout.draw(screen)
+    if keyboard:
+        keyboard.draw(screen)
     pygame.display.update()
-    return screen
+    return screen, keyboard
 
 
 def play_until_user_exits(
-    keys: typing.List[str],
-    key_sounds: typing.List[pygame.mixer.Sound]
+    keys: typing.List[kl.Key],
+    key_sounds: typing.List[pygame.mixer.Sound],
+    keyboard: klp.KeyboardLayout,
 ):
     sound_by_key = dict(zip(keys, key_sounds))
     playing = True
@@ -258,7 +261,9 @@ def play_until_user_exits(
                 playing = False
                 break
 
-            key = pygame.key.name(event.key)
+            key = keyboard.get_key(event)
+            if key is None:
+                continue
             try:
                 sound = sound_by_key[key]
             except KeyError:
@@ -307,18 +312,20 @@ def play_pianoputer():
     parser = get_parser()
     wav_path, keyboard_path, clear_cache = process_args(parser)
     audio_data, framerate_hz, channels = get_audio_data(wav_path)
-    keys, tones, color_name_to_key_name = get_keyboard_info(keyboard_path)
+    keys, tones, color_name_to_key = get_keyboard_info(keyboard_path)
+    print(keys)
+    print(color_name_to_key)
     key_sounds = get_or_create_key_sounds(
         wav_path, framerate_hz, channels, tones, clear_cache, keys)
 
-    _screen = configure_pygame_audio_and_set_ui(
-        framerate_hz, channels, keyboard_path, color_name_to_key_name)
+    _screen, keyboard = configure_pygame_audio_and_set_ui(
+        framerate_hz, channels, keyboard_path, color_name_to_key)
     print(
         'Ready for you to play!\n'
         'Press the keys on your keyboard. '
         'To exit presss ESC or close the pygame window'
     )
-    play_until_user_exits(keys, key_sounds)
+    play_until_user_exits(keys, key_sounds, keyboard)
 
 
 if __name__ == '__main__':
