@@ -36,7 +36,7 @@ Note that the default keyboard configuration (stored in file `keyboards/qwerty_p
 ```
 pianoputer -k keyboards/azerty_typewriter.txt
 ```
-![azerty laptop](./pianoputer/keyboards/azerty_typewriter.jpg "azerty laptop keyboard layout")
+![azerty typewriter](./pianoputer/keyboards/azerty_typewriter.jpg "azerty typewriter keyboard layout")
 These `.txt` files simply contain a sequence of key names and are easy to edit. For convenience this repository also provides a `make_kb_file.py` program:
 ```
 python make_kb_file.py
