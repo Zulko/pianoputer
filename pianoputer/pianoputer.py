@@ -12,6 +12,7 @@ import os
 import shutil
 import numpy
 import keyboardlayout as kl
+import keyboardlayout.pygame as klp
 from collections import defaultdict
 
 ANCHOR_INDICATOR = ' anchor'
@@ -190,9 +191,9 @@ def configure_pygame_audio_and_set_ui(
     screen_height = 50
     layout_name = None
     if 'qwerty' in keyboard_arg:
-        layout_name = 'qwerty'
+        layout_name = kl.LayoutName.QWERTY
     elif 'azerty' in keyboard_arg:
-        layout_name = 'azerty_laptop'
+        layout_name = kl.LayoutName.AZERTY_LAPTOP
     if layout_name:
         margin = 4
         key_size = 60
@@ -222,7 +223,7 @@ def configure_pygame_audio_and_set_ui(
             txt_padding=(key_size//6, key_size//10)
         )
         letter_key_size = (key_size, key_size)  # width, height
-        keyboard_layout = kl.KeyboardLayout(
+        keyboard_layout = klp.KeyboardLayout(
             layout_name,
             keyboard_info,
             letter_key_size,

@@ -59,6 +59,7 @@ pianoputer
 - c4 piano sample from https://en.wikipedia.org/wiki/File:Middle_C.mid
 
 ## TODO
+- limit setup.py instal to python <= 3.9 because somehow lvmlite is needed and https://github.com/numba/llvmlite/issues/530#issuecomment-555673204 -> https://github.com/numba/numba/issues/6345
 - allow the word anchor as an anchor, if so then color active keys in ascending white
 - update key identifiers to use different info?
   - use char info and fall back to keysym, a -> a, delete -> BackSpace
