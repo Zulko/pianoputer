@@ -165,22 +165,22 @@ def get_keyboard_info(keyboard_file: str):
         key_color = (120, 120, 120, 255)
         key_txt_color = (50, 50, 50, 255)
     else:
-        key_color = (0, 0, 0, 255)
-        key_txt_color = (75, 75, 75, 255)
+        key_color = (65, 65, 65, 255)
+        key_txt_color = (0, 0, 0, 255)
     for index, key in enumerate(keys):
         if index == anchor_index:
-            color_name_to_key['cyan'].append(key)
+            color_name_to_key[(0, 255, 255, 255)].append(key)
             continue
         if black_key_indices:
             used_index = (index - anchor_index) % 12
             if used_index in black_key_indices:
-                color_name_to_key['black'].append(key)
+                color_name_to_key[(0, 0, 0, 0)].append(key)
                 continue
-            color_name_to_key['white'].append(key)
+            color_name_to_key[(255, 255, 255, 255)].append(key)
             continue
         # anchor mode, keys go up in half steps and we do not color black keys
         # instead we color from grey low to white high
-        rgb_val = 255 - (len(keys) - 1 - index)*2
+        rgb_val = 255 - (len(keys) - 1 - index)*3
         color = (rgb_val, rgb_val, rgb_val, 255)
         color_name_to_key[color].append(key)
 
@@ -221,10 +221,20 @@ def configure_pygame_audio_and_set_ui(
     overrides = {}
     for color_value, keys in color_name_to_key.items():
         override_color = color=pygame.Color(color_value)
+        inverted_color_val = 256 + ~color_value[0]
+        other_val = 255
+        if (
+            abs(color_value[0] - inverted_color_val) >
+            abs(color_value[0] - other_val)
+        ):
+            txt_color_val = inverted_color_val
+        else:
+            txt_color_val = other_val
+        override_txt_color = pygame.Color([txt_color_val]*3 + [255])
         override_key_info = kl.KeyInfo(
             margin=margin,
             color=override_color,
-            txt_color=~override_color,
+            txt_color=override_txt_color,
             txt_font=pygame.font.SysFont('Arial', key_size//4),
             txt_padding=(key_size//10, key_size//10),
         )

@@ -9,11 +9,6 @@ import pygame
 class PianoPuter(unittest.TestCase):
     sample_images_folder = "pianoputer/keyboards/"
 
-    @classmethod
-    def tearDownClass(cls):
-        pygame.quit()
-
-
     def test_writes_sample_keyboards_to_images(self):
         keyboards = [
             'keyboards/azerty_typewriter.txt', 'keyboards/qwerty_piano.txt']
@@ -39,6 +34,7 @@ class PianoPuter(unittest.TestCase):
             file_name, file_extension = os.path.splitext(file_name_with_ext)
             pygame.image.save(
                 screen, self.sample_images_folder + "{}.jpg".format(file_name))
+            pygame.quit()
 
 
 if __name__ == '__main__':
