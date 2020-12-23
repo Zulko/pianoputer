@@ -26,6 +26,8 @@ pip-log.txt
 .coverage
 .tox
 nosetests.xml
+.pytest_cache
+.eggs
 
 # Translations
 *.mo
@@ -36,15 +38,14 @@ nosetests.xml
 .pydevproject
 
 # Temp files
-
 *~
 
 # Pipy codes
-
 .pypirc
 
-# Pianoputer files
-*.wav
-!bowl.wav
-*.kb
-!typewriter.kb
+# Mac files
+.DS_Store
+
+# Folders
+venv/
+pianoputer/audio_files/*/**

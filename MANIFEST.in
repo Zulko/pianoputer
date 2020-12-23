@@ -1,0 +1,3 @@
+include pianoputer/audio_files/*.wav
+include pianoputer/keyboards/*.png
+include pianoputer/keyboards/*.txt

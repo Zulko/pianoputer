@@ -17,15 +17,15 @@ e
 r
 t
 &
-world 73
+é
 "
 '
 (
--
-world 72
+- anchor
+è
 _
-world 71
-world 64
+ç
+à
 y
 u
 i
@@ -43,7 +43,7 @@ n
 !
 right shift
 right ctrl
-left
-down
-up
-right
+left arrow
+down arrow
+up arrow
+right arrow
