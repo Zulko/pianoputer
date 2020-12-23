@@ -1,3 +1,7 @@
+## 2.0.1
+- Fixes bug where audio files could not be loaded because mixer.init was not
+  allowing the data to be modified to suit the hardware needs
+
 ## 2.0.0
 - Add qwerty keyboard layout and defaults to using it
 - Adds images for the qwery and azerty keyboards, cyan is the anchor key

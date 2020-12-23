@@ -1,6 +1,8 @@
 import os
 import typing
 import unittest
+from unittest.mock import patch
+import shutil
 
 import pianoputer.pianoputer as pp
 import pygame
@@ -8,6 +10,31 @@ import pygame
 
 class PianoPuter(unittest.TestCase):
     sample_images_folder = "pianoputer/keyboards/"
+
+    def tearDown(self):
+        pygame.quit()
+
+    def test_works_with_different_channels(self):
+        audio_files = [
+            'piano-c4_1channel.wav',
+            'piano-c4_2channel.wav',
+            'piano-c4_4channel.wav',
+        ]
+        def get_quit():
+            return [pygame.event.Event(pygame.QUIT)]
+
+        for audio_file in audio_files:
+            with patch(
+                'pygame.event.get',
+                side_effect=get_quit
+            ) as m_event_get:
+                audio_file_path = os.path.join(
+                    os.path.dirname(__file__), audio_file)
+                pp.play_pianoputer(['-w', audio_file_path])
+            file_name, file_extension = os.path.splitext(audio_file)
+            folder_path = os.path.join(
+                os.path.dirname(__file__), file_name)
+            shutil.rmtree(folder_path)
 
     def test_writes_sample_keyboards_to_images(self):
         keyboards = [
@@ -34,7 +61,6 @@ class PianoPuter(unittest.TestCase):
             file_name, file_extension = os.path.splitext(file_name_with_ext)
             pygame.image.save(
                 screen, self.sample_images_folder + "{}.jpg".format(file_name))
-            pygame.quit()
 
 
 if __name__ == '__main__':

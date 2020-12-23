@@ -7,7 +7,7 @@ import librosa
 from pathlib import Path
 import soundfile
 import re
-import typing
+from typing import List, Generator, List, Tuple, Dict, Optional
 import os
 import shutil
 import numpy
@@ -20,6 +20,7 @@ ANCHOR_NOTE_REGEX = re.compile(r"\s[abcdefg]$")
 DESCRIPTION = 'Use your computer keyboard as a "piano"'
 DESCRIPTOR_32BIT = 'FLOAT'
 BITS_32BIT = 32
+AUDIO_ALLOWED_CHANGES_HARDWARE_DETERMINED = 0
 SOUND_FADE_MILLISECONDS = 50
 CYAN = (0, 255, 255, 255)
 BLACK = (0, 0, 0, 255)
@@ -62,10 +63,10 @@ def get_or_create_key_sounds(
     wav_path: str,
     sample_rate_hz: int,
     channels: int,
-    tones: typing.List[int],
+    tones: List[int],
     clear_cache: bool,
-    keys: typing.List[str]
-) -> typing.Generator[pygame.mixer.Sound, None, None]:
+    keys: List[str]
+) -> Generator[pygame.mixer.Sound, None, None]:
     sounds = []
     y, sr = librosa.load(wav_path, sr=sample_rate_hz, mono=channels==1)
     file_name = os.path.splitext(os.path.basename(wav_path))[0]
@@ -88,7 +89,7 @@ def get_or_create_key_sounds(
             )
             sound, sr = librosa.load(
                 cached_path, sr=sample_rate_hz, mono=channels==1)
-            if channels == 2:
+            if channels > 1:
                 # the shape must be [length, 2]
                 sound = numpy.transpose(sound)
         else:
@@ -102,9 +103,11 @@ def get_or_create_key_sounds(
             if channels == 1:
                 sound = librosa.effects.pitch_shift(y, sr, n_steps=tone)
             else:
-                left = librosa.effects.pitch_shift(y[0], sr, n_steps=tone)
-                right = librosa.effects.pitch_shift(y[1], sr, n_steps=tone)
-                sound = numpy.ascontiguousarray(numpy.vstack((left, right)).T)
+                new_channels = [
+                    librosa.effects.pitch_shift(y[i], sr, n_steps=tone)
+                    for i in range(channels)
+                ]
+                sound = numpy.ascontiguousarray(numpy.vstack(new_channels).T)
             soundfile.write(
                 cached_path, sound, sample_rate_hz, DESCRIPTOR_32BIT)
         sounds.append(sound)
@@ -195,10 +198,10 @@ def configure_pygame_audio_and_set_ui(
     framerate_hz: int,
     channels: int,
     keyboard_arg: str,
-    color_to_key: typing.Dict[str, typing.List[kl.Key]],
-    key_color: typing.Tuple[int, int, int, int],
-    key_txt_color: typing.Tuple[int, int, int, int],
-) -> typing.Tuple[pygame.Surface, klp.KeyboardLayout]:
+    color_to_key: Dict[str, List[kl.Key]],
+    key_color: Tuple[int, int, int, int],
+    key_txt_color: Tuple[int, int, int, int],
+) -> Tuple[pygame.Surface, klp.KeyboardLayout]:
     # ui
     pygame.display.init()
     pygame.display.set_caption('pianoputer')
@@ -207,7 +210,11 @@ def configure_pygame_audio_and_set_ui(
     pygame.font.init()
 
     # audio
-    pygame.mixer.init(framerate_hz, BITS_32BIT, channels)
+    pygame.mixer.init(
+        framerate_hz, BITS_32BIT,
+        channels,
+        allowedchanges=AUDIO_ALLOWED_CHANGES_HARDWARE_DETERMINED
+    )
 
     # block events that we don't want
     pygame.event.set_blocked(None)
@@ -280,8 +287,8 @@ def configure_pygame_audio_and_set_ui(
 
 
 def play_until_user_exits(
-    keys: typing.List[kl.Key],
-    key_sounds: typing.List[pygame.mixer.Sound],
+    keys: List[kl.Key],
+    key_sounds: List[pygame.mixer.Sound],
     keyboard: klp.KeyboardLayout,
 ):
     sound_by_key = dict(zip(keys, key_sounds))
@@ -314,18 +321,19 @@ def play_until_user_exits(
     pygame.quit()
     print('Goodbye')
 
-def get_audio_data(wav_path: str) -> typing.Tuple:
+def get_audio_data(wav_path: str) -> Tuple:
     audio_data, framerate_hz = soundfile.read(wav_path)
-    try:
-        channels = len(audio_data[0])
-    except TypeError:
+    array_shape = audio_data.shape
+    if len(array_shape) == 1:
         channels = 1
+    else:
+        channels = array_shape[1]
     return audio_data, framerate_hz, channels
 
 def process_args(
     parser: argparse.ArgumentParser,
-    args: typing.Optional[typing.List] = None
-) -> typing.Tuple:
+    args: Optional[List]
+) -> Tuple:
     if args:
         args = parser.parse_args(args)
     else:
@@ -344,9 +352,9 @@ def process_args(
         keyboard_path = os.path.join(CURRENT_WORKING_DIR, keyboard_path)
     return wav_path, keyboard_path, args.clear_cache
 
-def play_pianoputer():
+def play_pianoputer(args: Optional[List[str]] = None):
     parser = get_parser()
-    wav_path, keyboard_path, clear_cache = process_args(parser)
+    wav_path, keyboard_path, clear_cache = process_args(parser, args)
     audio_data, framerate_hz, channels = get_audio_data(wav_path)
     results = get_keyboard_info(keyboard_path)
     keys, tones, color_to_key, key_color, key_txt_color = results
