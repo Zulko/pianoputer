@@ -14,7 +14,7 @@ After a few seconds, the below image will appear in a window, indicating that th
 The cyan key is the key that the sample wav file is assigned to. By default this is c4, [the piano middle C at 261.6 hz](https://en.wikipedia.org/wiki/Piano_key_frequencies)
 All white and black keys are transposed up and down from the anchor cyan key.
 
-![qwerty keyboard layout, c4 is cyan](./pianoputer/keyboards/qwerty_piano.jpg "qwerty keyboard layout, c4 is cyan")
+![qwerty keyboard layout, c4 is cyan](https://raw.githubusercontent.com/Zulko/pianoputer/master/pianoputer/keyboards/qwerty_piano.jpg "qwerty keyboard layout, c4 is cyan")
 
 ## Changing the sound file
 
@@ -36,7 +36,7 @@ Note that the default keyboard configuration (stored in file `keyboards/qwerty_p
 ```
 pianoputer -k keyboards/azerty_typewriter.txt
 ```
-![azerty typewriter](./pianoputer/keyboards/azerty_typewriter.jpg "azerty typewriter keyboard layout")
+![azerty typewriter](https://raw.githubusercontent.com/Zulko/pianoputer/master/pianoputer/keyboards/azerty_typewriter.jpg "azerty typewriter keyboard layout")
 These `.txt` files simply contain a sequence of key names and are easy to edit. For convenience this repository also provides a `make_kb_file.py` program:
 ```
 python make_kb_file.py
@@ -57,3 +57,6 @@ pianoputer
 
 ## Attributions
 - c4 piano sample from https://en.wikipedia.org/wiki/File:Middle_C.mid
+
+## Changelog
+https://github.com/Zulko/pianoputer/tree/master/CHANGELOG.md

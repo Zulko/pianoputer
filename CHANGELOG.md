@@ -6,7 +6,7 @@
 - Adds caching of transposed audio files on the user's hard drive
 - Updates bowl samples to be c6 note
 - Adds a clear-cache command, invoke it with -c
-- Breaking: Updates keyboard file format to end in txt and require an anchor note
+- Breaking: Updates keyboard file format to end in txt and require an anchor note or key
 - Changes pitch shifting to use librosa, this works for mono and stereo files
 - Adds pypi installation with setup.py
 

@@ -21,6 +21,9 @@ DESCRIPTION = 'Use your computer keyboard as a "piano"'
 DESCRIPTOR_32BIT = 'FLOAT'
 BITS_32BIT = 32
 SOUND_FADE_MILLISECONDS = 50
+CYAN = (0, 255, 255, 255)
+BLACK = (0, 0, 0, 255)
+WHITE = (255, 255, 255, 255)
 
 AUDIO_ASSET_PREFIX = 'audio_files/'
 KEYBOARD_ASSET_PREFIX = 'keyboards/'
@@ -90,7 +93,7 @@ def get_or_create_key_sounds(
                 sound = numpy.transpose(sound)
         else:
             print(
-                "Transposing note {} out of {} for key {}".format(
+                "Transposing note {} out of {} for {}".format(
                     i+1,
                     len(tones),
                     keys[i]
@@ -152,15 +155,17 @@ def get_keyboard_info(keyboard_file: str):
         keys.append(key)
     if anchor_index == -1:
         raise ValueError(
-            "Invalid keyboard file, one key must have an anchor note written "
-            "next to it.\n"
-            "For example 'm c'.\n"
+            "Invalid keyboard file, one key must have an anchor note or the "
+            "word anchor written next to it.\n"
+            "For example 'm c OR m anchor'.\n"
             "That tells the program that the wav file will be used for key m, "
             "and all other keys will be pitch shifted higher or lower from "
-            "that anchor and key colors (black/white) are set by that anchor"
+            "that anchor. If an anchor note is used then keys are colored black "
+            "and white like a piano. If the word anchor is used, then the "
+            "highest key is white, and keys get darker as they descend in pitch."
         )
     tones = [i - anchor_index for i in range(len(keys))]
-    color_name_to_key = defaultdict(list)
+    color_to_key = defaultdict(list)
     if black_key_indices:
         key_color = (120, 120, 120, 255)
         key_txt_color = (50, 50, 50, 255)
@@ -169,28 +174,28 @@ def get_keyboard_info(keyboard_file: str):
         key_txt_color = (0, 0, 0, 255)
     for index, key in enumerate(keys):
         if index == anchor_index:
-            color_name_to_key[(0, 255, 255, 255)].append(key)
+            color_to_key[CYAN].append(key)
             continue
         if black_key_indices:
             used_index = (index - anchor_index) % 12
             if used_index in black_key_indices:
-                color_name_to_key[(0, 0, 0, 0)].append(key)
+                color_to_key[BLACK].append(key)
                 continue
-            color_name_to_key[(255, 255, 255, 255)].append(key)
+            color_to_key[WHITE].append(key)
             continue
         # anchor mode, keys go up in half steps and we do not color black keys
         # instead we color from grey low to white high
         rgb_val = 255 - (len(keys) - 1 - index)*3
         color = (rgb_val, rgb_val, rgb_val, 255)
-        color_name_to_key[color].append(key)
+        color_to_key[color].append(key)
 
-    return keys, tones, color_name_to_key, key_color, key_txt_color
+    return keys, tones, color_to_key, key_color, key_txt_color
 
 def configure_pygame_audio_and_set_ui(
     framerate_hz: int,
     channels: int,
     keyboard_arg: str,
-    color_name_to_key: typing.Dict[str, typing.List[kl.Key]],
+    color_to_key: typing.Dict[str, typing.List[kl.Key]],
     key_color: typing.Tuple[int, int, int, int],
     key_txt_color: typing.Tuple[int, int, int, int],
 ) -> typing.Tuple[pygame.Surface, klp.KeyboardLayout]:
@@ -219,18 +224,19 @@ def configure_pygame_audio_and_set_ui(
     margin = 4
     key_size = 60
     overrides = {}
-    for color_value, keys in color_name_to_key.items():
+    for color_value, keys in color_to_key.items():
         override_color = color=pygame.Color(color_value)
-        inverted_color_val = 256 + ~color_value[0]
+        inverted_color = list(~override_color)
         other_val = 255
         if (
-            abs(color_value[0] - inverted_color_val) >
-            abs(color_value[0] - other_val)
+            (abs(color_value[0] - inverted_color[0]) >
+            abs(color_value[0] - other_val)) or
+            color_value == CYAN
         ):
-            txt_color_val = inverted_color_val
+            override_txt_color = pygame.Color(inverted_color)
         else:
-            txt_color_val = other_val
-        override_txt_color = pygame.Color([txt_color_val]*3 + [255])
+            # biases grey override keys to use white as txt_color
+            override_txt_color = pygame.Color([other_val]*3 + [255])
         override_key_info = kl.KeyInfo(
             margin=margin,
             color=override_color,
@@ -343,7 +349,7 @@ def play_pianoputer():
     wav_path, keyboard_path, clear_cache = process_args(parser)
     audio_data, framerate_hz, channels = get_audio_data(wav_path)
     results = get_keyboard_info(keyboard_path)
-    keys, tones, color_name_to_key, key_color, key_txt_color = results
+    keys, tones, color_to_key, key_color, key_txt_color = results
     key_sounds = get_or_create_key_sounds(
         wav_path, framerate_hz, channels, tones, clear_cache, keys)
 
@@ -351,7 +357,7 @@ def play_pianoputer():
         framerate_hz,
         channels,
         keyboard_path,
-        color_name_to_key,
+        color_to_key,
         key_color,
         key_txt_color
     )

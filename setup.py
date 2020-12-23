@@ -21,7 +21,7 @@ setup(
         'console_scripts': ['pianoputer=pianoputer.pianoputer:play_pianoputer'],
     },
     license='see LICENSE.txt',
-    keywords = ["piano", "keyboard", "synthesizer"],
+    keywords = ["piano", "keyboard", "synthesizer", "instrument", "music"],
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
     extras_require={
