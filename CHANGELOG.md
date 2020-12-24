@@ -2,6 +2,8 @@
 - Fixes bug where audio files could not be loaded because mixer.init was not
   allowing the data to be modified to suit the hardware needs
 - 1, 2, and 4 channel wave files now supported
+- Fixes bug where keyboard files were read as ascii instead of unicode
+- Fixes bug where blocked audio device events were showing up in the queues
 
 ## 2.0.0
 - Add qwerty keyboard layout and defaults to using it

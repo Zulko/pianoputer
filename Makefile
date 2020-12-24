@@ -22,7 +22,6 @@ testpypi:
 	then \
 			echo "\nNot publishing"; exit 1; \
 	fi
-	make dist
 	python -m twine upload --repository testpypi dist/*
 
 pypi:
@@ -31,5 +30,4 @@ pypi:
 	then \
 			echo "\nNot publishing"; exit 1; \
 	fi
-	make dist
 	twine upload dist/*

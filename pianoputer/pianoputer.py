@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import codecs
 import pygame
 import warnings
 import librosa
@@ -136,7 +137,7 @@ def __get_black_key_indices(key_name: str) -> set:
     return black_key_indices
 
 def get_keyboard_info(keyboard_file: str):
-    with open(keyboard_file, 'r') as k_file:
+    with codecs.open(keyboard_file, encoding='utf-8') as k_file:
         lines = k_file.readlines()
     keys = []
     anchor_index = -1
@@ -206,6 +207,10 @@ def configure_pygame_audio_and_set_ui(
     pygame.display.init()
     pygame.display.set_caption('pianoputer')
 
+    # block events that we don't want, this must be after display.init
+    pygame.event.set_blocked(None)
+    pygame.event.set_allowed(list(ALLOWED_EVENTS))
+
     # fonts
     pygame.font.init()
 
@@ -215,10 +220,6 @@ def configure_pygame_audio_and_set_ui(
         channels,
         allowedchanges=AUDIO_ALLOWED_CHANGES_HARDWARE_DETERMINED
     )
-
-    # block events that we don't want
-    pygame.event.set_blocked(None)
-    pygame.event.set_allowed(list(ALLOWED_EVENTS))
 
     screen_width = 50
     screen_height = 50
