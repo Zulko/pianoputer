@@ -2,7 +2,7 @@
 
 import pygame as pg
 
-kb_file = open("my_keyboard.kb", 'w')
+kb_file = open("my_keyboard.kb", "w")
 
 pg.init()
 screen = pg.display.set_mode((200, 200))
@@ -15,7 +15,7 @@ while True:
         else:
             name = pg.key.name(event.key)
             print("Last key pressed: %s" % name)
-            kb_file.write(name + '\n')
+            kb_file.write(name + "\n")
 
 kb_file.close()
 print("Done. you have a new keyboard configuration file: %s" % (kb_file.name))
