@@ -1,3 +1,6 @@
+## 2.0.2
+- setup.py long_description format updated to markdown
+
 ## 2.0.1
 - Fixes bug where audio files could not be loaded because mixer.init was not
   allowing the data to be modified to suit the hardware needs

@@ -10,7 +10,7 @@ setup(
     name="pianoputer",
     install_requires=["librosa >= 0.8.0", "pygame >= 2.0.0", "keyboardlayout >= 2.0.1"],
     python_requires=">=3",
-    version="2.0.1",
+    version="2.0.2",
     description='Use your computer keyboard as a "piano"',
     author="Zulko",
     maintainer="Justin Black",
@@ -47,4 +47,5 @@ setup(
         "Topic :: Multimedia :: Sound/Audio :: Players",
     ],
     long_description=long_description,
+    long_description_content_type='text/markdown',
 )

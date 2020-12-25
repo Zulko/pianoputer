@@ -13,6 +13,7 @@ test:
 	python3 setup.py pytest
 
 dist:
+	rm -rf dist
 	python3 setup.py sdist bdist_wheel
 	rm -rf build
 
