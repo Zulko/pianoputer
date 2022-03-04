@@ -284,9 +284,10 @@ def play_until_user_exits(
             if event.type == pygame.QUIT:
                 playing = False
                 break
-            elif event.key == pygame.K_ESCAPE:
-                playing = False
-                break
+            elif event.type == pygame.KEYDOWN:
+                if event.type == pygame.K_ESCAPE:
+                    playing = False
+                    break
 
             key = keyboard.get_key(event)
             if key is None:
