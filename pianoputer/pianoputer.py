@@ -311,7 +311,7 @@ def play_until_user_exits(
             keyN = keys.index(key) + os.environ.get("MIDI_KEY_OFFSET", 37)
 
             if event.type == pygame.KEYDOWN:
-                 if not midi:
+                if not midi:
                     sound.stop()
                     sound.play(fade_ms=SOUND_FADE_MILLISECONDS)
                 else:
