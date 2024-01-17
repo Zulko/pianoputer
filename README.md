@@ -16,6 +16,11 @@ All white and black keys are transposed up and down from the anchor cyan key.
 
 ![qwerty keyboard layout, c4 is cyan](https://raw.githubusercontent.com/Zulko/pianoputer/master/pianoputer/keyboards/qwerty_piano.jpg "qwerty keyboard layout, c4 is cyan")
 
+## Midi
+
+You can use pianoputer as a midi keybaord by using the `--midi` flag. By default, the `--midi` flag creates a virtual midi output port called "pianoputer", but you can also specify a real port,
+such as `--midi COM1` or `--midi /dev/serial0`.
+
 ## Changing the sound file
 
 You can provide your own sound file with

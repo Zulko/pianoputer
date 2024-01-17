@@ -16,6 +16,7 @@ import librosa
 import numpy
 import pygame
 import soundfile
+import mido
 
 ANCHOR_INDICATOR = " anchor"
 ANCHOR_NOTE_REGEX = re.compile(r"\s[abcdefg]$")
@@ -33,6 +34,9 @@ KEYBOARD_ASSET_PREFIX = "keyboards/"
 CURRENT_WORKING_DIR = Path(__file__).parent.absolute()
 ALLOWED_EVENTS = {pygame.KEYDOWN, pygame.KEYUP, pygame.QUIT}
 
+# declare globals
+midi = False
+midout = None
 
 def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=DESCRIPTION)
@@ -60,6 +64,14 @@ def get_parser() -> argparse.ArgumentParser:
         default=False,
         action="store_true",
         help="deletes stored transposed audio files and recalculates them",
+    )
+    parser.add_argument(
+        "--midi", "-m",
+        type=str,
+        help="enable midi, and provide midi port (optional)",
+        nargs='?',
+        default=None,
+        const="pianoputer"
     )
     parser.add_argument("--verbose", "-v", action="store_true", help="verbose mode")
 
@@ -99,10 +111,10 @@ def get_or_create_key_sounds(
                 )
             )
             if channels == 1:
-                sound = librosa.effects.pitch_shift(y, sr, n_steps=tone)
+                sound = librosa.effects.pitch_shift(y=y, sr=sr, n_steps=tone)
             else:
                 new_channels = [
-                    librosa.effects.pitch_shift(y[i], sr, n_steps=tone)
+                    librosa.effects.pitch_shift(y=y[i], sr=sr, n_steps=tone)
                     for i in range(channels)
                 ]
                 sound = numpy.ascontiguousarray(numpy.vstack(new_channels).T)
@@ -296,11 +308,20 @@ def play_until_user_exits(
             except KeyError:
                 continue
 
+            keyN = keys.index(key) + os.environ.get("MIDI_KEY_OFFSET", 37)
+
             if event.type == pygame.KEYDOWN:
-                sound.stop()
-                sound.play(fade_ms=SOUND_FADE_MILLISECONDS)
+                 if not midi:
+                    sound.stop()
+                    sound.play(fade_ms=SOUND_FADE_MILLISECONDS)
+                else:
+                    midout.send(mido.Message('note_on', note=keyN, velocity=100))
+
             elif event.type == pygame.KEYUP:
-                sound.fadeout(SOUND_FADE_MILLISECONDS)
+                if not midi:
+                    sound.fadeout(SOUND_FADE_MILLISECONDS)
+                else:
+                    midout.send(mido.Message('note_off', note=keyN, velocity=0))
 
     pygame.quit()
     print("Goodbye")
@@ -333,12 +354,19 @@ def process_args(parser: argparse.ArgumentParser, args: Optional[List]) -> Tuple
     keyboard_path = args.keyboard
     if keyboard_path.startswith(KEYBOARD_ASSET_PREFIX):
         keyboard_path = os.path.join(CURRENT_WORKING_DIR, keyboard_path)
-    return wav_path, keyboard_path, args.clear_cache
 
+    return wav_path, keyboard_path, args.clear_cache, args.midi
 
 def play_pianoputer(args: Optional[List[str]] = None):
+
+    global midi, midout
+
     parser = get_parser()
-    wav_path, keyboard_path, clear_cache = process_args(parser, args)
+    wav_path, keyboard_path, clear_cache, midi = process_args(parser, args)
+
+    if midi:
+        midout = mido.open_output(midi, virtual=not (midi.startswith("COM") or midi.startswith("/dev/")), use_environ=True)
+
     audio_data, framerate_hz, channels = get_audio_data(wav_path)
     results = get_keyboard_info(keyboard_path)
     keys, tones, color_to_key, key_color, key_txt_color = results
