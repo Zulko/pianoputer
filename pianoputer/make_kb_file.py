@@ -7,9 +7,12 @@ kb_file = open("my_keyboard.kb", "w")
 pg.init()
 screen = pg.display.set_mode((200, 200))
 print("Press the keys in the right order. Press Escape to finish.")
+
 while True:
+
     event = pg.event.wait()
-    if event.type is pg.KEYDOWN:
+
+    if event.type == pg.KEYDOWN:
         if event.key == pg.K_ESCAPE:
             break
         else:
