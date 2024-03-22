@@ -38,6 +38,8 @@ ALLOWED_EVENTS = {pygame.KEYDOWN, pygame.KEYUP, pygame.QUIT}
 midi = False
 midoutB = None
 midoutT = None
+keyboard_state_info = None
+screen = None
 
 def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=DESCRIPTION)
@@ -181,7 +183,7 @@ def get_keyboard_info(keyboard_file: str):
         key_color = (65, 65, 65, 255)
         key_txt_color = (0, 0, 0, 255)
     for index, key in enumerate(keys):
-        if index == anchor_index:
+        if index == anchor_index and False: #ignore the anchor
             color_to_key[CYAN].append(key)
             continue
         if black_key_indices:
@@ -275,12 +277,79 @@ def configure_pygame_audio_and_set_ui(
     screen_width = keyboard.rect.width
     screen_height = keyboard.rect.height
 
+    global screen, keyboard_state_info
+
+    keyboard_state_info = (
+        keyboard_arg,
+        color_to_key,
+        key_color,
+        key_txt_color
+    )
+
     screen = pygame.display.set_mode((screen_width, screen_height))
     screen.fill(pygame.Color("black"))
     if keyboard:
         keyboard.draw(screen)
     pygame.display.update()
     return screen, keyboard
+
+
+def draw(keyboard_arg, color_to_key, key_color, key_txt_color):
+
+    screen_width = 50
+    screen_height = 50
+    if "qwerty" in keyboard_arg:
+        layout_name = kl.LayoutName.QWERTY
+    elif "azerty" in keyboard_arg:
+        layout_name = kl.LayoutName.AZERTY_LAPTOP
+    else:
+        ValueError("keyboard must have qwerty or azerty in its name")
+    margin = 4
+    key_size = 60
+    overrides = {}
+    for color_value, keys in color_to_key.items():
+        override_color = color = pygame.Color(color_value)
+        inverted_color = list(~override_color)
+        other_val = 255
+        if (
+            abs(color_value[0] - inverted_color[0]) > abs(color_value[0] - other_val)
+        ) or color_value == CYAN:
+            override_txt_color = pygame.Color(inverted_color)
+        else:
+            # biases grey override keys to use white as txt_color
+            override_txt_color = pygame.Color([other_val] * 3 + [255])
+        override_key_info = kl.KeyInfo(
+            margin=margin,
+            color=override_color,
+            txt_color=override_txt_color,
+            txt_font=pygame.font.SysFont("Arial", key_size // 4),
+            txt_padding=(key_size // 10, key_size // 10),
+        )
+        for key in keys:
+            overrides[key.value] = override_key_info
+
+    key_txt_color = pygame.Color(key_txt_color)
+    keyboard_info = kl.KeyboardInfo(position=(0, 0), padding=2, color=key_txt_color)
+    key_info = kl.KeyInfo(
+        margin=margin,
+        color=pygame.Color(key_color),
+        txt_color=pygame.Color(key_txt_color),
+        txt_font=pygame.font.SysFont("Arial", key_size // 4),
+        txt_padding=(key_size // 6, key_size // 10),
+    )
+    letter_key_size = (key_size, key_size)  # width, height
+    keyboard = klp.KeyboardLayout(
+        layout_name, keyboard_info, letter_key_size, key_info, overrides
+    )
+    screen_width = keyboard.rect.width
+    screen_height = keyboard.rect.height
+
+    global screen
+
+    #screen = pygame.display.set_mode((screen_width, screen_height))
+    screen.fill(pygame.Color("black"))
+    keyboard.draw(screen)
+    pygame.display.update()
 
 
 def play_until_user_exits(
@@ -312,6 +381,9 @@ def play_until_user_exits(
             keyN = keys.index(key) + int(os.environ.get("MIDI_KEY_OFFSET", 37 + 5)) + int(os.environ.get("MIDI_KEY_TRANSPOSE", 0))
 
             if event.type == pygame.KEYDOWN:
+
+                keyboard_state_info[1][CYAN].append(key)
+
                 if not midi:
                     sound.stop()
                     sound.play(fade_ms=SOUND_FADE_MILLISECONDS)
@@ -322,6 +394,9 @@ def play_until_user_exits(
                         midoutT.send(mido.Message('note_on', note=keyN, velocity=100))
 
             elif event.type == pygame.KEYUP:
+
+                keyboard_state_info[1][CYAN].remove(key)
+
                 if not midi:
                     sound.fadeout(SOUND_FADE_MILLISECONDS)
                 else:
@@ -329,6 +404,9 @@ def play_until_user_exits(
                         midoutB.send(mido.Message('note_off', note=keyN, velocity=0))
                     else:
                         midoutT.send(mido.Message('note_off', note=keyN, velocity=0))
+
+        draw(*keyboard_state_info)
+        pygame.display.flip()
 
     pygame.quit()
     print("Goodbye")
